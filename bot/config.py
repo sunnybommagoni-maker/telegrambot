@@ -11,8 +11,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
 if not BOT_TOKEN:
     print("❌ CRITICAL ERROR: BOT_TOKEN not found in environment variables!")
-    print("Please add BOT_TOKEN as a Secret in your Hugging Face Space settings.")
-    # We don't raise here to allow the process to show this print in logs before crashing
+    print(f"Available Environment Keys: {list(os.environ.keys())}")
+    print("Please ensure your Hugging Face Secret is named EXACTLY 'BOT_TOKEN'.")
 
 # ── Admin ────────────────────────────────────────────────────
 _admin_raw = os.getenv("ADMIN_IDS", "")
