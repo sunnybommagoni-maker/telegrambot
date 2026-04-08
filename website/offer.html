@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surface Offers — High Payouts Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=2.6.5">
+    <link rel="stylesheet" href="css/responsive.css?v=2.6.5">
+    <!-- Google AdSense Master Hub -->
+    <script type="text/javascript">
+        var app_url = 'https://shrinkearn.com/';
+        var app_api_token = '9cb7dcf0e024c3b2456fb5dde48e1d4cd0a093b1';
+        var app_advert = 2;
+        var app_domains = ["https://chatting-app-ae637.web.app/"];
+    </script>
+    <script src='//shrinkearn.com/js/full-page-script.js'></script>
+</head>
+
+<body>
+    <!-- 🎯 TOP AD - HORIZONTAL BANNER (468x60) -->
+    <div class="ad-top" id="ad-top-1">
+        <script>
+            atOptions = {
+                'key': 'e92210dbd77db33df4ffd95395c4c63a',
+                'format': 'iframe',
+                'height': 60,
+                'width': 468,
+                'params': {}
+            };
+        </script>
+        <script src="https://www.highperformanceformat.com/e92210dbd77db33df4ffd95395c4c63a/invoke.js"></script>
+    </div>
+
+    <!-- TOP AD - HORIZONTAL BANNER (320x50) MOBILE -->
+    <div class="ad-top" id="ad-top-2" style="padding: 0.5rem 0; margin: 0.5rem 0;">
+        <script>
+            atOptions = {
+                'key': 'd433d0b2a48765d197c04d4941789acb',
+                'format': 'iframe',
+                'height': 50,
+                'width': 320,
+                'params': {}
+            };
+        </script>
+        <script src="https://www.highperformanceformat.com/d433d0b2a48765d197c04d4941789acb/invoke.js"></script>
+    </div>
+    <div id="header-target"></div>
+    <!-- 🚀 MAXIMIZE ADS: TOP BORDER AD -->
+    <div style="margin: 1rem 0; text-align:center; overflow:hidden;">
+    </div>
+    <main class="main-layout">
+        <div class="earning-section">
+            <h1>Premium Offers Hub</h1>
+            <p>Verification in <span id="timer-sec" style="font-weight:900; color:var(--p);">60</span>s.</p>
+            <button id="claim-btn" class="btn-claim" onclick="claimReward()">💰 CLAIM OFFER REWARD</button>
+            <iframe id="target-frame" src="about:blank"></iframe>
+            </section>
+            <!-- Sidebar Layout -->
+            <aside class="portal-sidebar">
+                <!-- 🎯 SIDEBAR AD 1 - VERTICAL RECTANGLE (160x300) -->
+                <div class="ad-sidebar">
+                    <div class="ad-sidebar-item">
+                        <script>
+                            atOptions = {
+                                'key': '57a8a217066802391ffd462b3e29a380',
+                                'format': 'iframe',
+                                'height': 300,
+                                'width': 160,
+                                'params': {}
+                            };
+                        </script>
+                        <script
+                            src="https://www.highperformanceformat.com/57a8a217066802391ffd462b3e29a380/invoke.js"></script>
+                    </div>
+
+                    <!-- 🎯 SIDEBAR AD 2 - TALL VERTICAL (160x600) -->
+                    <div class="ad-sidebar-item">
+                        <script>
+                            atOptions = {
+                                'key': 'cd98d03308146826f3d0f52131597280',
+                                'format': 'iframe',
+                                'height': 600,
+                                'width': 160,
+                                'params': {}
+                            };
+                        </script>
+                        <script
+                            src="https://www.highperformanceformat.com/cd98d03308146826f3d0f52131597280/invoke.js"></script>
+                    </div>
+                </div>
+                <div id="sidebar-target"></div>
+            </aside>
+    </main>
+    <div id="footer-target"></div>
+
+    <!-- 🎯 BOTTOM AD - HORIZONTAL BANNER (320x50) -->
+    <div class="ad-bottom" id="ad-bottom-1">
+        <script>
+            atOptions = {
+                'key': 'd433d0b2a48765d197c04d4941789acb',
+                'format': 'iframe',
+                'height': 50,
+                'width': 320,
+                'params': {}
+            };
+        </script>
+        <script src="https://www.highperformanceformat.com/d433d0b2a48765d197c04d4941789acb/invoke.js"></script>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="js/shortlink-service.js?v=2.8.0"></script>
+    <script src="js/content.js"></script>
+    <script src="js/realtime.js"></script>
+    <script src="js/navigation.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        document.getElementById('target-frame').src = params.get('url') || 'https://play.google.com';
+        
+        let timeLeft = 60;
+        const countdown = setInterval(() => {
+            timeLeft--;
+            const timerEl = document.getElementById('timer-sec');
+            if (timerEl) {
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerEl.innerText = "✅";
+                    document.getElementById('claim-btn').style.display = 'inline-block';
+                }
+            }
+        }, 1000);
+
+        function claimReward() {
+            if (window.HubPayout) {
+                window.HubPayout.claim();
+            } else {
+                alert("Hub Engine loading... please wait.");
+            }
+        }
+    </script>
+</body>
+
+</html>

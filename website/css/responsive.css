@@ -1,0 +1,48 @@
+/* 
+   Surface Hub Admin Responsive Styles (v5.7.2)
+   Mobile-first utilities for the admin dashboard.
+*/
+
+@media (max-width: 992px) {
+    .sidebar {
+        width: 70px !important;
+        padding: 1rem 0.5rem !important;
+    }
+    .sidebar h2, .sidebar span {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 70px !important;
+        width: calc(100% - 70px) !important;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .btn-primary {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+/* Glassmorphism utility */
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}

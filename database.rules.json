@@ -1,0 +1,48 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      },
+      ".read": false, 
+      ".write": false
+    },
+    "user_tasks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      },
+      ".read": false,
+      ".write": false
+    },
+    "tasks": {
+      ".read": true,
+      ".write": "auth != null" 
+    },
+    "content": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "broadcast_queue": {
+      ".read": false,
+      ".write": "auth != null"
+    },
+    "deposits": {
+      ".read": false,
+      ".write": "auth != null"
+    },
+    "withdraws": {
+      ".read": false,
+      ".write": "auth != null"
+    },
+    "ads": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "offers": {
+      ".read": true,
+      ".write": "auth != null"
+    }
+  }
+}

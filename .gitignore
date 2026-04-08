@@ -1,0 +1,9 @@
+# gitignore for SurfaceWBot
+.env
+serviceAccountKey.json
+__pycache__/
+*.pyc
+*.pyo
+.firebase/
+*.log
+temp_hf/

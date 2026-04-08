@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surface Hub Admin • Enterprise Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/responsive.css?v=2.7.0">
+
+    <style>
+        :root {
+            --p: #0076ff;
+            /* Royal Blue */
+            --p-dark: #0056b3;
+            --bg: #05070a;
+            --sidebar: #0a0d14;
+            --card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: #fff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Login Screen */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: var(--sidebar);
+            padding: 3rem;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Main Setup */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            flex-shrink: 0;
+            transition: 0.3s;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 3rem;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, rgba(0, 118, 255, 0.05), transparent);
+            transition: 0.3s;
+        }
+
+        /* Mobile Adjustments (OnePlus Nord 3 5G Optimized) */
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem;
+                padding-bottom: 100px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .logo {
+                display: none;
+            }
+
+            #mobile-bottom-nav {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 70px;
+                background: var(--sidebar);
+                border-top: 1px solid var(--border);
+                z-index: 1000;
+                backdrop-filter: blur(20px);
+                justify-content: space-around;
+                align-items: center;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .nav-item-m {
+                background: none;
+                border: none;
+                color: var(--text-muted);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+                font-size: 0.7rem;
+                font-family: inherit;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            .nav-item-m i {
+                font-size: 1.2rem;
+            }
+
+            .nav-item-m.active {
+                color: var(--p);
+            }
+        }
+
+        #mobile-bottom-nav {
+            display: none;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.5rem;
+            margin-bottom: 3rem;
+            color: var(--p);
+            letter-spacing: -1px;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: var(--p);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 118, 255, 0.3);
+        }
+
+        /* Dashboard Components */
+        .glass-card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            margin-top: 8px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--p);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-primary {
+            background: var(--p);
+            color: #fff;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 118, 255, 0.4);
+        }
+
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+
+        .inventory-item:hover {
+            border-color: var(--border);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 180px;
+            border-radius: 12px;
+            background: #000;
+            margin-top: 15px;
+            display: none;
+            object-fit: cover;
+        }
+
+        /* Tab Management */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 🔒 LOGIN OVERLAY -->
+    <div id="login-overlay">
+        <div class="login-card">
+            <div class="logo">SURFACE ADMIN HUB</div>
+            <p style="opacity: 0.6; margin-bottom: 2rem;">Secure Terminal Access Required.</p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <input type="email" id="adminEmail" placeholder="Administrator Email" style="text-align:center;">
+                <input type="password" id="adminPassword" placeholder="Master Password" style="text-align:center;">
+                <button class="btn-primary" style="width:100%" onclick="AdminApp.login()">ESTABLISH SECURE LINK</button>
+            </div>
+            <p id="loginError" style="color:#ff4d4d; font-size:0.8rem; margin-top:15px; display:none;"></p>
+            <div style="margin-top: 2rem; font-size: 0.7rem; opacity: 0.3; letter-spacing: 1px;">
+                SESSION LOGGING ACTIVE • SURFACE HUB SEC
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">Admin Console</div>
+        <div class="nav-item active" onclick="AdminApp.setTab('dashboard', this)"><i class="fas fa-chart-line"></i>
+            Dashboard</div>
+        <div class="nav-item" onclick="AdminApp.setTab('posts', this)"><i class="fas fa-edit"></i> Manage Posts</div>
+        <div class="nav-item" onclick="AdminApp.setTab('tasks', this)"><i class="fas fa-tasks"></i> Task Earn</div>
+        <div class="nav-item" onclick="AdminApp.setTab('broadcast', this)"><i class="fas fa-bullhorn"></i> Broadcast
+        </div>
+        <div class="nav-item" onclick="AdminApp.setTab('analytics', this)"><i class="fas fa-users"></i> Users Hub</div>
+        
+        <!-- Phase 9: New Earnings System Tabs -->
+        <hr style="border: 1px solid var(--border); margin: 1.5rem 0;">
+        <div class="nav-item" onclick="AdminApp.setTab('users-earnings', this)"><i class="fas fa-wallet"></i> Users (Earnings)</div>
+        <div class="nav-item" onclick="AdminApp.setTab('withdrawals', this)"><i class="fas fa-money-bill-wave"></i> Withdrawals</div>
+        <div class="nav-item" onclick="AdminApp.setTab('deposits', this)"><i class="fas fa-credit-card"></i> Deposits</div>
+        <div class="nav-item" onclick="AdminApp.setTab('referrals', this)"><i class="fas fa-share-nodes"></i> Referrals</div>
+        <div class="nav-item" onclick="AdminApp.setTab('settings', this)"><i class="fas fa-cog"></i> Settings</div>
+
+        <div style="margin-top: auto;">
+            <div class="nav-item" onclick="location.reload()"><i class="fas fa-sign-out-alt"></i> Logout</div>
+        </div>
+    </nav>
+
+    <!-- Mobile Bottom Navigation (Visible on < 992px) -->
+    <div id="mobile-bottom-nav">
+        <button class="nav-item-m active" onclick="AdminApp.setTab('dashboard', this); updateMobileActive(this)"><i
+                class="fas fa-chart-line"></i><span>Dash</span></button>
+        <button class="nav-item-m" onclick="AdminApp.setTab('posts', this); updateMobileActive(this)"><i
+                class="fas fa-edit"></i><span>Posts</span></button>
+        <button class="nav-item-m" onclick="AdminApp.setTab('tasks', this); updateMobileActive(this)"><i
+                class="fas fa-tasks"></i><span>Tasks</span></button>
+        <button class="nav-item-m" onclick="AdminApp.setTab('broadcast', this); updateMobileActive(this)"><i
+                class="fas fa-bullhorn"></i><span>Blast</span></button>
+        <button class="nav-item-m" onclick="AdminApp.setTab('users-earnings', this); updateMobileActive(this)"><i
+                class="fas fa-wallet"></i><span>Earn</span></button>
+    </div>
+
+    <script>
+        function updateMobileActive(el) {
+            document.querySelectorAll('.nav-item-m').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-content active">
+            <h1 style="font-weight: 900; margin-bottom: 2rem;">System Overview</h1>
+            <div class="grid">
+                <div class="glass-card">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Total
+                        Users</span>
+                    <h2 id="stat-users" style="font-size: 2.5rem; font-weight: 900; margin-top: 10px;">0</h2>
+                </div>
+                <div class="glass-card">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Total Rewards
+                        Paid</span>
+                    <h2 id="stat-rewards"
+                        style="font-size: 2.5rem; font-weight: 900; margin-top: 10px; color: #10b981;">₹0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- POSTS TAB -->
+        <div id="tab-posts" class="tab-content">
+            <h1 style="font-weight: 900; margin-bottom: 2rem;">Post Management</h1>
+            <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="glass-card">
+                    <h3>Add New Record</h3>
+                    <div style="margin-top: 1.5rem;">
+                        <label>Post Title</label>
+                        <input type="text" id="post-title" placeholder="News Headline">
+
+                        <label>Category</label>
+                        <select id="post-cat">
+                            <option value="Blogs">Blog Post</option>
+                            <option value="Videos">Video Link</option>
+                            <option value="Games">Hub Game</option>
+                            <option value="Records">Global Record</option>
+                        </select>
+
+                        <label>Post Summary</label>
+                        <textarea id="post-summary" placeholder="Short description for card view..."></textarea>
+
+                        <label>Video URL (Optional)</label>
+                        <input type="text" id="post-video"
+                            placeholder="https://youtube.com/watch?v=... or https://vimeo.com/...">
+
+                        <div style="margin-top: 1rem;">
+                            <label>Image Source</label>
+                            <div style="display:flex; gap: 10px; margin-top: 5px;">
+                                <button class="btn-primary" style="padding: 10px; margin: 0; font-size: 0.8rem;"
+                                    onclick="document.getElementById('post-file').click()">Upload File</button>
+                                <input type="text" id="post-url" placeholder="Or Paste URL" style="margin: 0;">
+                                <input type="file" id="post-file" style="display:none"
+                                    onchange="AdminApp.handleFile(this)">
+                            </div>
+                        </div>
+                        <img id="post-preview" class="image-preview">
+
+                        <label style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.6;">Enable Sharing</label>
+                        <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
+                            <input type="checkbox" id="share-facebook" checked> <label for="share-facebook"
+                                style="margin: 0;">Facebook</label>
+                            <input type="checkbox" id="share-twitter" checked> <label for="share-twitter"
+                                style="margin: 0;">Twitter</label>
+                            <input type="checkbox" id="share-whatsapp" checked> <label for="share-whatsapp"
+                                style="margin: 0;">WhatsApp</label>
+                            <input type="checkbox" id="share-telegram" checked> <label for="share-telegram"
+                                style="margin: 0;">Telegram</label>
+                        </div>
+
+                        <button id="btn-publish-post" class="btn-primary" style="width:100%"
+                            onclick="AdminApp.savePost()">PUBLISH TO PORTAL</button>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <h3>Live Content Inventory</h3>
+                    <div id="post-list" style="margin-top: 1.5rem; max-height: 600px; overflow-y: auto;">
+                        <!-- Injected -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TASKS TAB -->
+        <div id="tab-tasks" class="tab-content">
+            <h1 style="font-weight: 900; margin-bottom: 2rem;">Shared Task Engine</h1>
+            <div class="grid" style="grid-template-columns: 1fr 1.5fr;">
+                <div class="glass-card">
+                    <h3>Add Earn Task</h3>
+                    <div style="margin-top: 1.5rem;">
+                        <label>Task Title</label>
+                        <input type="text" id="task-title" placeholder="Subscribe to YouTube">
+
+                        <label>Destination URL</label>
+                        <input type="text" id="task-url" placeholder="https://youtube.com/c/...">
+
+                        <label>Reward (₹)</label>
+                        <input type="number" id="task-reward" value="10">
+
+                        <button class="btn-primary" style="width:100%" onclick="AdminApp.saveTask()">SYNC TO BOT &
+                            WEB</button>
+                    </div>
+                </div>
+                <div class="glass-card">
+                    <h3>Global Tasks</h3>
+                    <div id="task-list" style="margin-top: 1.5rem;">
+                        <!-- Injected -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BROADCAST TAB -->
+        <div id="tab-broadcast" class="tab-content">
+            <h1 style="font-weight: 900; margin-bottom: 2rem;">Global Broadcast</h1>
+            <div class="grid" style="grid-template-columns: 1fr 1.5fr;">
+                <div class="glass-card">
+                    <h3>Queue Broadcast</h3>
+                    <div style="margin-top: 1.5rem;">
+                        <label>Notification Message</label>
+                        <textarea id="bc-msg" style="height: 150px;"
+                            placeholder="Hey users! New update is live..."></textarea>
+
+                        <label>Attachment URL (Optional)</label>
+                        <input type="text" id="bc-img" placeholder="https://link.to/image.jpg">
+
+                        <button class="btn-primary" style="width: 100%; background: #ec4899;"
+                            onclick="AdminApp.sendBroadcast()">🚀 BLAST TO ALL BOT USERS</button>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <h3>Active Queue Monitor</h3>
+                    <div id="bc-list" style="margin-top: 1.5rem; max-height: 400px; overflow-y: auto;">
+                        <div class="glass-card" style="background: rgba(0,0,0,0.05); text-align:center;">
+                            <p style="opacity: 0.5;">No active broadcasts in queue.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS / USERS TAB -->
+        <div id="tab-analytics" class="tab-content">
+            <h1 style="font-weight: 900; margin-bottom: 2rem;">Users Hub</h1>
+            <div class="glass-card">
+                <h3>Global User Base</h3>
+                <div style="margin-top: 1.5rem; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+                                <th style="padding: 1rem;">User ID</th>
+                                <th style="padding: 1rem;">Username</th>
+                                <th style="padding: 1rem;">Balance</th>
+                                <th style="padding: 1rem;">Status</th>
+                                <th style="padding: 1rem;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list">
+                            <!-- Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE 9: NEW EARNINGS SYSTEM TABS -->
+        
+        <!-- DASHBOARD TAB (NEW) -->
+        <div id="tab-dashboard-earnings" class="tab-content">
+            <div id="dashboard-tab-content">
+                <!-- Injected by admin-dashboard.js -->
+            </div>
+        </div>
+
+        <!-- USERS EARNINGS TAB -->
+        <div id="tab-users-earnings" class="tab-content">
+            <div id="users-tab-content">
+                <!-- Injected by admin-users.js -->
+            </div>
+        </div>
+
+        <!-- WITHDRAWALS TAB -->
+        <div id="tab-withdrawals" class="tab-content">
+            <div id="withdrawals-tab-content">
+                <!-- Injected by admin-withdrawals.js -->
+            </div>
+        </div>
+
+        <!-- DEPOSITS TAB -->
+        <div id="tab-deposits" class="tab-content">
+            <div id="deposits-tab-content">
+                <!-- Injected by admin-deposits.js -->
+            </div>
+        </div>
+
+        <!-- REFERRALS TAB -->
+        <div id="tab-referrals" class="tab-content">
+            <div id="referrals-tab-content">
+                <!-- Injected by admin-referrals.js -->
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="tab-settings" class="tab-content">
+            <div id="settings-tab-content">
+                <!-- Injected by admin-settings.js -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Dependencies -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+    <script src="js/admin.js?v=2.7.0"></script>
+</body>
+
+</html>
