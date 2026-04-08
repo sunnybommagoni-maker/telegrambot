@@ -45,6 +45,9 @@ else:
 
 firebase_admin.initialize_app(cred, {"databaseURL": FIREBASE_URL})
 
+# Export db.reference so other files can use db.reference() when importing this module
+reference = db.reference
+
 # ════════════════════════════════════════════════════════════════
 #  USER FUNCTIONS
 # ════════════════════════════════════════════════════════════════
