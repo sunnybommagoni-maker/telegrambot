@@ -7,7 +7,7 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(_BOT_DIR, "..")) # telegram bot/
 load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 
 # ── Bot ───────────────────────────────────────────────────────
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
 if not BOT_TOKEN:
     print("❌ CRITICAL ERROR: BOT_TOKEN not found in environment variables!")
