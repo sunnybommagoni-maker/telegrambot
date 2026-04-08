@@ -116,6 +116,10 @@ async def post_init(application: Application):
     await application.bot.set_my_commands(commands)
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log the error and send a notice to the user/admin if necessary."""
+    logger.error("Exception while handling an update:", exc_info=context.error)
+
 def main():
     """Main execution loop"""
     # Start Keep-Alive
@@ -123,6 +127,9 @@ def main():
 
     # Create Bot Application
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
+
+    # Register error handler
+    app.add_error_handler(error_handler)
 
     # 1. DEPOSIT CONVERSATION HANDLER (Must be added first)
     deposit_conv = ConversationHandler(
