@@ -189,4 +189,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--help" in sys.argv:
+        print("Usage: python bot/main.py")
+        print("Note: This bot should be run without arguments to start the production service.")
+    else:
+        main()
