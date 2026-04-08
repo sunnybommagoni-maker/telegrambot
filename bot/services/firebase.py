@@ -64,7 +64,11 @@ def create_user(user_id: int, username: str, referred_by: int | None = None, ini
         "tasks_done": 0,
         "offers_done": 0,
         "deposit_status": False,
-        "referrals": 0,
+        "referrals": {
+            "referral_code": None,
+            "referred_count": 0,
+            "referrals_list": {}
+        },
         "referred_by": referred_by,
         "join_date": int(time.time()),
         "banned": False,

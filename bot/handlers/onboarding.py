@@ -117,7 +117,13 @@ async def user_returning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = db.get_user(user_id)
     balance = user_data.get("balance", 0)
     tasks_completed = user_data.get("earnings", {}).get("tasks_completed", 0)
-    referral_code = user_data.get("referrals", {}).get("referral_code")
+    
+    # Resilient referral retrieval (handles dict or legacy int)
+    referrals_data = user_data.get("referrals", {})
+    if isinstance(referrals_data, dict):
+        referral_code = referrals_data.get("referral_code", "N/A")
+    else:
+        referral_code = "N/A"
     
     welcome_back_msg = (
         f"👋 *Welcome Back, {user.first_name}!*\n"
