@@ -173,11 +173,12 @@ async def approve_withdrawal(update: Update, context: ContextTypes.DEFAULT_TYPE)
     result = approve_withdrawal_request(request_id, f"Approved by {ADMIN_NAME}")
     
     if result.get("success"):
+        # Update admin message
+        current_text = query.message.text or "💳 Withdrawal Request"
         await query.message.edit_text(
-            text=query.message.text + "\n\n✅ *APPROVED*",
+            text=current_text + "\n\n✅ *APPROVED*",
             parse_mode="Markdown"
         )
-        await query.message.edit_reply_markup(reply_markup=None)
         
         # Notify user
         try:
@@ -214,11 +215,12 @@ async def reject_withdrawal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = reject_withdrawal_request(request_id, "Rejected by admin")
     
     if result.get("success"):
+        # Update admin message
+        current_text = query.message.text or "💳 Withdrawal Request"
         await query.message.edit_text(
-            text=query.message.text + "\n\n❌ *REJECTED*",
+            text=current_text + "\n\n❌ *REJECTED*",
             parse_mode="Markdown"
         )
-        await query.message.edit_reply_markup(reply_markup=None)
         
         # Notify user
         try:
