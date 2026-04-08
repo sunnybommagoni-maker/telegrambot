@@ -3,7 +3,7 @@ import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 import services.firebase as db
-from config import DEPOSIT_AMOUNT, ADMIN_TELEGRAM_ID, ADMIN_NAME, UPI_ID
+from config import DEPOSIT_AMOUNT, ADMIN_IDS, ADMIN_NAME, UPI_ID
 from utils.qr import generate_upi_qr
 from utils.keyboards import main_menu_keyboard
 
@@ -152,13 +152,17 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
         ])
         
-        await context.bot.send_photo(
-            chat_id=ADMIN_TELEGRAM_ID,
-            photo=file_id,
-            caption=admin_msg,
-            parse_mode="Markdown",
-            reply_markup=keyboard
-        )
+        for admin_id in ADMIN_IDS:
+            try:
+                await context.bot.send_photo(
+                    chat_id=admin_id,
+                    photo=file_id,
+                    caption=admin_msg,
+                    parse_mode="Markdown",
+                    reply_markup=keyboard
+                )
+            except Exception as e:
+                logger.error(f"Failed to notify admin {admin_id}: {e}")
         
         logger.info(f"✓ Admin notified for deposit from {user_id}")
         
@@ -175,6 +179,10 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     query = update.callback_query
     await query.answer()
+
+    if update.effective_user.id not in ADMIN_IDS:
+        await query.message.reply_text("❌ Unauthorized access.")
+        return
     
     # Extract user_id from callback data
     try:
@@ -265,6 +273,10 @@ async def reject_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     query = update.callback_query
     await query.answer()
+
+    if update.effective_user.id not in ADMIN_IDS:
+        await query.message.reply_text("❌ Unauthorized access.")
+        return
     
     # Extract user_id from callback data
     try:

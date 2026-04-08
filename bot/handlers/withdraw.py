@@ -7,7 +7,7 @@ import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 import services.firebase as db
-from config import MINIMUM_WITHDRAW_AMOUNT, ADMIN_TELEGRAM_ID, ADMIN_NAME
+from config import MINIMUM_WITHDRAW_AMOUNT, ADMIN_IDS, ADMIN_NAME
 from utils.firebase_transactions import create_withdrawal_request, approve_withdrawal_request, reject_withdrawal_request
 from utils.keyboards import main_menu_keyboard
 
@@ -126,12 +126,16 @@ async def handle_upi(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 ]
             ])
             
-            await context.bot.send_message(
-                chat_id=ADMIN_TELEGRAM_ID,
-                text=admin_msg,
-                parse_mode="Markdown",
-                reply_markup=keyboard
-            )
+            for admin_id in ADMIN_IDS:
+                try:
+                    await context.bot.send_message(
+                        chat_id=admin_id,
+                        text=admin_msg,
+                        parse_mode="Markdown",
+                        reply_markup=keyboard
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to notify admin {admin_id}: {e}")
         except Exception as e:
             logger.error(f"❌ Error notifying admin: {e}")
     else:
@@ -145,6 +149,10 @@ async def approve_withdrawal(update: Update, context: ContextTypes.DEFAULT_TYPE)
     """Admin approves withdrawal"""
     query = update.callback_query
     await query.answer()
+
+    if update.effective_user.id not in ADMIN_IDS:
+        await query.message.reply_text("❌ Unauthorized access.")
+        return
     
     try:
         # data format: with_approve_REQUESTID

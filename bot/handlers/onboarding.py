@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 import services.firebase as db
 from utils.referral_manager import generate_referral_code, validate_and_link_referral
 from utils.firebase_transactions import migrate_user_to_new_schema
-from config import DEPOSIT_AMOUNT, ADMIN_TELEGRAM_ID
+from config import DEPOSIT_AMOUNT
 import time
 from utils.reward_manager import verify_and_claim_token
 from utils.firebase_transactions import process_task_completion

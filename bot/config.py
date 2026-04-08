@@ -10,10 +10,9 @@ load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # ── Admin ────────────────────────────────────────────────────
-ADMIN_TELEGRAM_ID = 5936922644
-ADMIN_NAME = "Yaswanth"
-_admin_raw = os.getenv("ADMIN_IDS", "5936922644")
-ADMIN_IDS = [int(x.strip()) for x in _admin_raw.split(",") if x.strip().isdigit()] or [ADMIN_TELEGRAM_ID]
+_admin_raw = os.getenv("ADMIN_IDS", "")
+ADMIN_IDS = [int(x.strip()) for x in _admin_raw.split(",") if x.strip().isdigit()]
+ADMIN_NAME = os.getenv("ADMIN_NAME", "Yaswanth")
 
 # ── Firebase ──────────────────────────────────────────────────
 FIREBASE_URL = os.getenv("FIREBASE_URL", "https://chatting-app-ae637-default-rtdb.firebaseio.com")
@@ -36,8 +35,8 @@ LINKPAYS_API_KEY = os.getenv("LINKPAYS_API_KEY", "")
 # Task & Rewards
 TASK_COMPLETION_REWARD = 10  # ₹10 per task
 
-DEPOSIT_AMOUNT = 50  # User requested ₹50
-MINIMUM_WITHDRAW_AMOUNT = 500  # User requested ₹500
+DEPOSIT_AMOUNT = int(os.getenv("DEPOSIT_AMOUNT", "50"))
+MINIMUM_WITHDRAW_AMOUNT = int(os.getenv("MIN_WITHDRAW", "500"))
 
 # Referral System
 REFERRAL_BONUS_REFERRER = 100  # ₹100 for friend's referrer when friend completes 25 tasks
