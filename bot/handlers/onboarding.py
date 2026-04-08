@@ -112,9 +112,16 @@ async def user_returning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Shows current balance and quick action buttons.
     """
     user = update.effective_user
+    if not user:
+        return # Should not happen in standard flow
+        
     user_id = user.id
     
     user_data = db.get_user(user_id)
+    if not user_data:
+        # Fallback if DB lookup fails suddenly
+        return await welcome_new_user(update, context)
+        
     balance = user_data.get("balance", 0)
     tasks_completed = user_data.get("earnings", {}).get("tasks_completed", 0)
     
@@ -138,17 +145,27 @@ async def user_returning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     from utils.keyboards import main_menu_keyboard
     
-    await update.message.reply_text(
-        welcome_back_msg,
-        parse_mode="Markdown",
-        reply_markup=main_menu_keyboard()
-    )
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            welcome_back_msg,
+            parse_mode="Markdown",
+            reply_markup=main_menu_keyboard()
+        )
+    else:
+        await update.message.reply_text(
+            welcome_back_msg,
+            parse_mode="Markdown",
+            reply_markup=main_menu_keyboard()
+        )
 
 
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Main start handler - routes to new user, returning user, or reward claim.
     """
+    if not update.effective_user:
+        return
+        
     user_id = update.effective_user.id
     
     # Check for reward token first: /start reward_TOKEN

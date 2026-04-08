@@ -12,6 +12,7 @@ from telegram.ext import (
 )
 
 from config import BOT_TOKEN
+import telegram
 import services.firebase as db
 from keep_alive import keep_alive
 from utils.keyboards import main_menu_keyboard
@@ -118,6 +119,11 @@ async def post_init(application: Application):
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log the error and send a notice to the user/admin if necessary."""
+    # 🔇 Silence Conflict errors (Ghost bot instances during HF rollout)
+    if isinstance(context.error, telegram.error.Conflict):
+        logger.warning(f"⚠️ Conflict detected (Ghost bot instance). Update ignored but system stable.")
+        return
+        
     logger.error("Exception while handling an update:", exc_info=context.error)
 
 def main():
