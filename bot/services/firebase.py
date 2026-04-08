@@ -294,16 +294,23 @@ def get_all_user_ids() -> list[int]:
 #  CONTENT / NEWS FUNCTIONS
 # ════════════════════════════════════════════════════════════════
 
-def add_content(title: str, summary: str, category: str, image: str = None, url: str = None) -> str:
+def add_content(title: str, summary: str, category: str, image: str = None, url: str = None, content: str = None) -> str:
     """Adds a real-time record to the Surface Hub portal."""
     ref = db.reference("content").push({
         "title": title,
         "summary": summary,
+        "content": content,
         "category": category,
         "image": image,
         "url": url,
         "timestamp": int(time.time()),
-        "addedAt": int(time.time())
+        "addedAt": int(time.time()),
+        "shareOptions": {
+            "facebook": True,
+            "twitter": True,
+            "whatsapp": True,
+            "telegram": True
+        }
     })
     return ref.key
 

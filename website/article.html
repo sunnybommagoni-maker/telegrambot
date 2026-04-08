@@ -180,7 +180,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('article-title').innerText = data.title;
                 document.getElementById('article-category').innerText = data.category || data.type || 'Portal Feed';
                 document.getElementById('article-image').style.backgroundImage = `url('${data.image || data.thumbnail || 'https://source.unsplash.com/1200x800/?news'}')`;
-                document.getElementById('article-content').innerHTML = `<p>${data.content || data.description || 'Accessing portal records...'}</p>`;
+                
+                // 💎 DYNAMIC AD SWARMER
+                const articleContainer = document.getElementById('article-content');
+                const rawContent = data.content || data.description || 'Accessing portal records...';
+                
+                // Provided Ads Array
+                const adScripts = [
+                    { key: '4c130fd19d0381c4f42d8cdf70579cad', format: 'iframe', height: 250, width: 300 }, // 300x250
+                    { key: 'd433d0b2a48765d197c04d4941789acb', format: 'iframe', height: 50, width: 320 },  // 320x50
+                    { type: 'cpm', src: 'https://pl29071707.profitablecpmratenetwork.com/78/7c/78/787c786a9cb2487ccb9000abb92ae3f1.js' } // ProfitableCPM
+                ];
+
+                if (rawContent.includes('[AD_SLOT]')) {
+                    articleContainer.innerHTML = ''; // Clear
+                    const parts = rawContent.split('[AD_SLOT]');
+                    
+                    parts.forEach((part, index) => {
+                        // 1. Add Paragraph
+                        const p = document.createElement('div');
+                        p.className = 'paragraph-block';
+                        p.style.marginBottom = '20px';
+                        p.innerHTML = part.replace(/\n/g, '<br>');
+                        articleContainer.appendChild(p);
+
+                        // 2. Inject Ad if not the last part
+                        if (index < parts.length - 1) {
+                            const ad = adScripts[index % adScripts.length];
+                            const adWrap = document.createElement('div');
+                            adWrap.className = 'ad-injection-slot';
+                            adWrap.style.margin = '25px 0';
+                            adWrap.style.textAlign = 'center';
+                            adWrap.id = `ad-slot-${index}`;
+                            articleContainer.appendChild(adWrap);
+
+                            // Dynamically load the script
+                            if (ad.type === 'cpm') {
+                                const s = document.createElement('script');
+                                s.src = ad.src;
+                                adWrap.appendChild(s);
+                            } else {
+                                const s1 = document.createElement('script');
+                                s1.innerHTML = `atOptions = { 'key' : '${ad.key}', 'format' : '${ad.format}', 'height' : ${ad.height}, 'width' : ${ad.width}, 'params' : {} };`;
+                                const s2 = document.createElement('script');
+                                s2.src = `https://www.highperformanceformat.com/${ad.key}/invoke.js`;
+                                adWrap.appendChild(s1);
+                                adWrap.appendChild(s2);
+                            }
+                        }
+                    });
+                } else {
+                    articleContainer.innerHTML = `<p>${rawContent.replace(/\n/g, '<br>')}</p>`;
+                }
                 
                 // 🎥 EMBED VIDEO IF EXISTS
                 if (data.videoUrl) {

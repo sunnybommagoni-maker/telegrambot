@@ -21,6 +21,7 @@ from handlers.deposit import start_deposit, handle_screenshot, cancel_deposit, a
 from handlers.earn import earn_command
 from handlers.withdraw import withdraw_command, handle_amount, handle_upi, approve_withdrawal, reject_withdrawal, cancel_withdraw, WAITING_AMOUNT, WAITING_UPI
 from handlers.wallet_profile import wallet_command, profile_command
+from services.news_agent import autonomous_news_job
 
 # ════════════════════════════════════════════════════════════════
 # LOGGER CONFIGURATION
@@ -136,6 +137,12 @@ def main():
 
     # Register error handler
     app.add_error_handler(error_handler)
+
+    # 🔗 JOB QUEUE: AUTONOMOUS AI AGENT (Runs every 3 hours)
+    if app.job_queue:
+        # Run once on start + repeat every 3 hours
+        app.job_queue.run_repeating(autonomous_news_job, interval=10800, first=5)
+        logger.info("🕒 AI News Agent scheduled (3-hour interval).")
 
     # 1. DEPOSIT CONVERSATION HANDLER (Must be added first)
     deposit_conv = ConversationHandler(
