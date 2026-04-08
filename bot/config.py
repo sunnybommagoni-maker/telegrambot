@@ -9,6 +9,11 @@ load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 # ── Bot ───────────────────────────────────────────────────────
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+if not BOT_TOKEN:
+    print("❌ CRITICAL ERROR: BOT_TOKEN not found in environment variables!")
+    print("Please add BOT_TOKEN as a Secret in your Hugging Face Space settings.")
+    # We don't raise here to allow the process to show this print in logs before crashing
+
 # ── Admin ────────────────────────────────────────────────────
 _admin_raw = os.getenv("ADMIN_IDS", "")
 ADMIN_IDS = [int(x.strip()) for x in _admin_raw.split(",") if x.strip().isdigit()]
