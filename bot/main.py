@@ -17,7 +17,7 @@ from keep_alive import keep_alive
 from utils.keyboards import main_menu_keyboard
 from handlers.onboarding import handle_start
 from handlers.deposit import start_deposit, handle_screenshot, cancel_deposit, approve_deposit, reject_deposit, WAITING_SCREENSHOT
-from handlers.earn import earn_command, stage2_handler, claim_reward_handler
+from handlers.earn import earn_command
 from handlers.withdraw import withdraw_command, handle_amount, handle_upi, approve_withdrawal, reject_withdrawal, cancel_withdraw, WAITING_AMOUNT, WAITING_UPI
 from handlers.wallet_profile import wallet_command, profile_command
 
@@ -145,9 +145,7 @@ def main():
     app.add_handler(CallbackQueryHandler(approve_deposit, pattern="^dep_approve_"))
     app.add_handler(CallbackQueryHandler(reject_deposit, pattern="^dep_reject_"))
 
-    # 3. EARN COMMAND HANDLERS (3-stage workflow)
-    app.add_handler(CallbackQueryHandler(stage2_handler, pattern="^earn_stage2_"))
-    app.add_handler(CallbackQueryHandler(claim_reward_handler, pattern="^earn_claim_"))
+    # 3. EARN COMMAND HANDLERS (Web flow only)
 
     # 4. WITHDRAW CONVERSATION HANDLER (Must be before button handler)
     withdraw_conv = ConversationHandler(

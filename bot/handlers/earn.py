@@ -56,24 +56,14 @@ async def earn_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # 6. Send Earning Message
     earn_msg = (
-        "🤑 *EARN TASK AVAILABLE*\n"
+        "💰 *EARN REWARD: ₹10*\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
-        "💰 *Reward:* ₹10\n"
-        "⏱️ *Duration:* ~30 seconds\n"
-        "🔗 *Type:* Web Verification\n\n"
-        
-        "📋 *Instructions:*\n"
-        "1️⃣  Click the button below to start.\n"
-        "2️⃣  Wait 10s on the Home page.\n"
-        "3️⃣  Continue to a random page and wait 20s.\n"
-        "4️⃣  Click 'Claim' to get your money!\n\n"
-        
-        "⚠️ *Note:* Don't close the browser until you see 'Verification Complete'."
+        "Click the button below to start your earning process on the Surface Portal."
     )
     
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔗 START TASK (₹10)", url=short_url)],
-        [InlineKeyboardButton("💎 Wallet", callback_data="btn_wallet"), InlineKeyboardButton("📋 Menu", callback_data="btn_start")]
+        [InlineKeyboardButton("💰 Click to Earn (₹10)", url=short_url)],
+        [InlineKeyboardButton("📋 Menu", callback_data="btn_start")]
     ])
     
     if update.message:
