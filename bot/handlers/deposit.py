@@ -217,10 +217,10 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Activate user account
         db.reference(f"users/{user_id}/deposit_status").set(True)
         
-        # Add deposit amount to balance
-        current_balance = user.get("balance", 0)
-        new_balance = current_balance + DEPOSIT_AMOUNT + 20  # Include ₹20 bonus
-        db.reference(f"users/{user_id}/balance").set(new_balance)
+        # Add deposit amount + bonus to balance using atomic operator
+        # Benefit: Safe even if balance was changed simultaneously
+        bonus = 20
+        new_balance = db.update_balance(user_id, DEPOSIT_AMOUNT + bonus)
         
         # Log approval
         db.reference("admin_logs/deposit_approvals").push({
@@ -234,8 +234,10 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         })
         
         # Update admin message
+        # Use safe caption fallback to prevent NoneType + str error
+        current_caption = query.message.caption or "📸 Deposit Verification Request"
         await query.message.edit_caption(
-            caption=query.message.caption + "\n\n✅ *APPROVED*",
+            caption=current_caption + "\n\n✅ *APPROVED*",
             parse_mode="Markdown"
         )
         await query.message.edit_reply_markup(reply_markup=None)
@@ -312,8 +314,9 @@ async def reject_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         })
         
         # Update admin message
+        current_caption = query.message.caption or "📸 Deposit Verification Request"
         await query.message.edit_caption(
-            caption=query.message.caption + "\n\n❌ *REJECTED*",
+            caption=current_caption + "\n\n❌ *REJECTED*",
             parse_mode="Markdown"
         )
         await query.message.edit_reply_markup(reply_markup=None)
