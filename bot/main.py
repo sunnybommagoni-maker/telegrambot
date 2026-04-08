@@ -132,7 +132,7 @@ def main():
         ],
         states={
             WAITING_SCREENSHOT: [
-                MessageHandler(filters.PHOTO, handle_screenshot),
+                MessageHandler(filters.PHOTO | filters.Document.ALL, handle_screenshot),
                 CommandHandler("cancel", cancel_deposit)
             ]
         },

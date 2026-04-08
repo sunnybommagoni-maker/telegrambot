@@ -94,13 +94,16 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = db.get_user(user_id)
     username = user.get("username") if user else update.effective_user.first_name
     
-    # Validate photo was sent
-    if not update.message.photo:
-        await update.message.reply_text("❌ Please send a *photo* screenshot.")
+    # Extract file_id and type
+    if update.message.photo:
+        file_id = update.message.photo[-1].file_id
+        send_method = context.bot.send_photo
+    elif update.message.document:
+        file_id = update.message.document.file_id
+        send_method = context.bot.send_document
+    else:
+        await update.message.reply_text("❌ Please send a *screenshot* as a photo or file.")
         return WAITING_SCREENSHOT
-    
-    # Get highest quality photo
-    file_id = update.message.photo[-1].file_id
     
     # Save deposit request to Firebase
     try:
@@ -142,7 +145,7 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🆔 ID: `{user_id}`\n"
             f"💰 Amount: ₹{DEPOSIT_AMOUNT}\n"
             f"⏰ Time: {time.strftime('%H:%M:%S')}\n\n"
-            f"📸 Screenshot below. Tap buttons to verify:"
+            f"📸 Screenshot above. Tap buttons to verify:"
         )
         
         keyboard = InlineKeyboardMarkup([
@@ -154,9 +157,10 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         for admin_id in ADMIN_IDS:
             try:
-                await context.bot.send_photo(
+                # Use detected send method (photo or document)
+                await send_method(
                     chat_id=admin_id,
-                    photo=file_id,
+                    **{"photo" if update.message.photo else "document": file_id},
                     caption=admin_msg,
                     parse_mode="Markdown",
                     reply_markup=keyboard
