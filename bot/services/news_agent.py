@@ -125,9 +125,11 @@ class AIAgent:
                 elif "```" in json_str:
                     json_str = json_str.split("```")[1].split("```")[0].strip()
                 
+                # 3. Ensure Ad Slots exist (Fail-Safe)
                 data = json.loads(json_str)
-                
-                # 3. Publish to Firebase
+                final_content = self.fix_ad_slots(data["content"])
+
+                # 4. Publish to Firebase
                 # For images, we try to use a placeholder or the snippet context
                 image_tag = data.get("category", "tech").lower()
                 image_url = f"https://source.unsplash.com/1200x800/?{image_tag}"
@@ -138,7 +140,7 @@ class AIAgent:
                     category=data["category"],
                     image=image_url,
                     url=url,
-                    content=data["content"]
+                    content=final_content
                 )
                 
                 logger.info(f"✅ AI Published Content: {content_id}")
@@ -148,6 +150,23 @@ class AIAgent:
                 continue
                 
         logger.info("✨ AI Sweep Complete.")
+
+    def fix_ad_slots(self, content):
+        """Ensures [AD_SLOT] exists every few paragraphs if the LLM forgot."""
+        if "[AD_SLOT]" in content:
+            return content
+            
+        paragraphs = content.split('\n\n')
+        if len(paragraphs) < 3:
+            paragraphs = content.split('\n') # Fallback to single newlines
+            
+        new_content = []
+        for i, p in enumerate(paragraphs):
+            new_content.append(p.strip())
+            if i == 1 or i == 3 or (i > 3 and i % 3 == 0):
+                new_content.append("[AD_SLOT]")
+        
+        return "\n\n".join(new_content)
 
 # Background Job Hook
 async def autonomous_news_job(context):
