@@ -113,49 +113,59 @@ async def user_returning(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     user = update.effective_user
     if not user:
-        return # Should not happen in standard flow
-        
+        return
+
     user_id = user.id
-    
+
     user_data = db.get_user(user_id)
     if not user_data:
-        # Fallback if DB lookup fails suddenly
         return await welcome_new_user(update, context)
-        
+
     balance = user_data.get("balance", 0)
     tasks_completed = user_data.get("earnings", {}).get("tasks_completed", 0)
-    
+
     # Resilient referral retrieval (handles dict or legacy int)
     referrals_data = user_data.get("referrals", {})
     if isinstance(referrals_data, dict):
         referral_code = referrals_data.get("referral_code", "N/A")
     else:
         referral_code = "N/A"
-    
+
+    # Read live system config for feature flags
+    try:
+        cfg = db.get_system_config()
+        watch_enabled = cfg.get("watch_enabled", True)
+        website_url   = cfg.get("website_url", "https://chatting-app-ae637.web.app")
+    except Exception:
+        watch_enabled = True
+        website_url   = "https://chatting-app-ae637.web.app"
+
     welcome_back_msg = (
         f"👋 *Welcome Back, {user.first_name}!*\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
-        
         f"💰 *Your Balance:* ₹{balance}\n"
         f"📋 *Tasks Completed:* {tasks_completed}/25\n"
         f"🎯 *Referral Code:* `{referral_code}`\n\n"
-        
         "What would you like to do?"
     )
-    
+    if watch_enabled:
+        welcome_back_msg += f"\n\n📺 *New:* Watch videos & earn rewards → [Watch Now]({website_url}/watch.html)"
+
     from utils.keyboards import main_menu_keyboard
-    
+
     if update.callback_query:
         await update.callback_query.edit_message_text(
             welcome_back_msg,
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard()
+            reply_markup=main_menu_keyboard(watch_enabled),
+            disable_web_page_preview=True
         )
     else:
         await update.message.reply_text(
             welcome_back_msg,
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard()
+            reply_markup=main_menu_keyboard(watch_enabled),
+            disable_web_page_preview=True
         )
 
 
