@@ -17,10 +17,17 @@ const EarnSystem = {
 
     init() {
         this.urlParams = new URLSearchParams(window.location.search);
-        this.token = this.urlParams.get('token');
-        this.step = parseInt(this.urlParams.get('step'));
+        this.token = this.urlParams.get('token') || localStorage.getItem('earn_token');
+        this.step = parseInt(this.urlParams.get('step')) || parseInt(localStorage.getItem('earn_step')) || 0;
 
-        if (!this.token || !this.step) return;
+        if (!this.token || !this.step) {
+            console.log("ℹ️ No active earn session detected.");
+            return;
+        }
+
+        // Persist for page refreshes
+        localStorage.setItem('earn_token', this.token);
+        localStorage.setItem('earn_step', this.step);
 
         console.log(`🤑 Earn Session Active: Step ${this.step}`);
         this.injectStyles();
@@ -178,6 +185,11 @@ const EarnSystem = {
         // Use the existing HubPayout logic if available, or implement directly
         setTimeout(() => {
             alert("✅ Verification Complete! Redirecting to SurfaceWBot to claim your ₹10 reward...");
+            
+            // Clear persistence
+            localStorage.removeItem('earn_token');
+            localStorage.removeItem('earn_step');
+            
             window.location.href = `https://t.me/SurfaceWBot?start=reward_${this.token}`;
         }, 1500);
     }

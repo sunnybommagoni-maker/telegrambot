@@ -1,8 +1,8 @@
-/**
- * Admin Referrals Tab (Phase 9)
- * Real-time referral network insights
- */
+// Referrals Core
+const db = window.db;
+const auth = window.auth;
 
+// Initialize Referrals Tab
 let allReferrals = {};
 
 // Initialize Referrals Tab

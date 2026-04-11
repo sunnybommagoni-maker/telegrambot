@@ -38,9 +38,10 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-const db = firebase.database();
-const storage = firebase.storage();
-const auth = firebase.auth();
+const db = window.db = firebase.database();
+const storage = window.storage = firebase.storage();
+const auth = window.auth = firebase.auth();
+window.firebase = firebase;
 
 /**
  * ADMIN APPLICATION - Main Controller
@@ -54,15 +55,16 @@ const AdminApp = {
     init() {
         console.log("🚀 Admin Console v2.8.0 - Initializing...");
         this.listenToAuth();
-        setTimeout(() => {
-            if (this.user) {
-                this.loadStats();
-                this.listenToInventory();
-                this.loadUsers();
-                this.monitorBroadcasts();
-                console.log("✅ All systems online - Real-time listeners active");
-            }
-        }, 1000);
+    },
+
+    startListeners() {
+        if (this.statsInterval) clearInterval(this.statsInterval);
+        
+        console.log("📡 Starting Real-time listeners...");
+        this.loadStats();
+        this.listenToInventory();
+        this.monitorBroadcasts();
+        console.log("✅ All systems online - Real-time listeners active");
     },
 
     // ==================== AUTHENTICATION ====================
@@ -72,6 +74,7 @@ const AdminApp = {
                 this.user = user;
                 document.getElementById('login-overlay').style.display = 'none';
                 console.log("✅ Admin Authenticated:", user.email);
+                this.startListeners();
             } else {
                 this.user = null;
                 document.getElementById('login-overlay').style.display = 'flex';
@@ -131,7 +134,7 @@ const AdminApp = {
                         adminDashboard.initDashboardTab();
                     }
                     break;
-                case 'users-earnings':
+                case 'analytics':
                     if (adminUsers?.initUsersTab) {
                         adminUsers.initUsersTab();
                     }
@@ -441,47 +444,6 @@ const AdminApp = {
         });
     },
 
-    // ==================== USER MANAGEMENT ====================
-    loadUsers() {
-        db.ref('users').on('value', snap => {
-            const container = document.getElementById('user-list');
-            if (!container) return;
-
-            container.innerHTML = '';
-            let userCount = 0;
-
-            snap.forEach(child => {
-                userCount++;
-                const user = child.val();
-                const status = user.deposit_status ? '✅ ACTIVE' : '❌ INACTIVE';
-                const statusColor = user.deposit_status ? '#10b981' : '#ef4444';
-
-                container.innerHTML += `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 1rem; font-size: 0.85rem; opacity: 0.8;">${child.key.substring(0, 8)}...</td>
-                        <td style="padding: 1rem; font-weight: 600;">${user.username || user.name || 'Anonymous'}</td>
-                        <td style="padding: 1rem; color: #10b981; font-weight: 900;">₹${(user.balance || 0).toLocaleString()}</td>
-                        <td style="padding: 1rem;">
-                            <span style="padding: 6px 12px; border-radius: 50px; background: ${statusColor}; font-size: 0.7rem; font-weight: 700;">
-                                ${status}
-                            </span>
-                        </td>
-                        <td style="padding: 1rem;">
-                            <button class="nav-item" style="padding: 5px 10px; margin: 0; display: inline-block; color: #ef4444;" 
-                                onclick="if(confirm('Remove user?')) AdminApp.deleteItem('users', '${child.key}')">
-                                <i class="fas fa-user-slash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            if (userCount === 0) {
-                container.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center; opacity: 0.5;">No users yet</td></tr>';
-            }
-        });
-    },
-
     // ==================== INVENTORY LISTENERS (REAL-TIME) ====================
     listenToInventory() {
         // CONTENT INVENTORY (Posts with Video & Share Indicators)
@@ -576,6 +538,8 @@ const AdminApp = {
 };
 
 // ==================== AUTO-INIT ====================
+window.AdminApp = AdminApp; // Make global for onclick handlers
+
 document.addEventListener('DOMContentLoaded', () => {
     AdminApp.init();
 });

@@ -1,9 +1,9 @@
-/**
- * Admin Settings Tab (Phase 9)
- * Configuration and system settings
- */
+// Settings Core
+const db = window.db;
+const auth = window.auth;
 
-const CONFIG_PATH = 'admin/system_config';
+// Configuration Path
+const CONFIG_PATH = 'system_config';
 
 // Initialize Settings Tab
 export async function initSettingsTab() {
@@ -69,11 +69,11 @@ export async function initSettingsTab() {
         </div>
     `;
     
-    loadSettings();
+    internalLoadSettings();
 }
 
 // Load current settings
-export async function loadSettings() {
+async function internalLoadSettings() {
     try {
         const snapshot = await db.ref(CONFIG_PATH).once('value');
         const config = snapshot.val() || {};
@@ -94,7 +94,7 @@ export async function loadSettings() {
 }
 
 // Save settings to Firebase
-export async function saveSettings() {
+async function internalSaveSettings() {
     try {
         const config = {
             deposit_amount: parseFloat(document.getElementById('deposit-amount').value),
@@ -122,8 +122,10 @@ function showStatus(message, type) {
     setTimeout(() => statusEl.textContent = '', 5000);
 }
 
-// Make functions global
-window.saveSettings = saveSettings;
-window.loadSettings = loadSettings;
+// Make functions global for onclick handlers
+window.saveSettings = internalSaveSettings;
+window.loadSettings = internalLoadSettings;
+window.initSettingsTab = initSettingsTab;
 
-export { loadSettings, saveSettings };
+// Optional: No need for bottom exports if they are exported at definition
+// window assignments already handle onclick accessibility

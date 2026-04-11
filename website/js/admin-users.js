@@ -1,9 +1,8 @@
-/**
- * Admin Users Tab (Phase 9)
- * Real-time user earnings and referral statistics
- */
+// Users Core
+const db = window.db;
+const auth = window.auth;
 
-// Store users data for filtering
+// Initialize Users Tab
 let allUsers = {};
 
 // Initialize Users Tab
@@ -127,6 +126,12 @@ function filterAndDisplayUsers() {
             <div class="user-dates">
                 <p>Joined: ${formatDate(user.join_date)}</p>
                 <p>Last Active: ${formatDate(user.last_active)}</p>
+            </div>
+            <div class="user-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn-primary" style="padding: 8px 16px; margin: 0; background: #ef4444; font-size: 0.8rem;" 
+                    onclick="if(confirm('🚨 PERMANENTLY REMOVE USER ${user.username}?')) AdminApp.deleteItem('users', '${user.id}')">
+                    <i class="fas fa-user-slash"></i> DELETE USER
+                </button>
             </div>
         </div>
     `).join('');

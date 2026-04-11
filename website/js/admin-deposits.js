@@ -1,8 +1,8 @@
-/**
- * Admin Deposits Tab (Phase 9)
- * Real-time deposit verification and approval
- */
+// Deposits Core
+const db = window.db;
+const auth = window.auth;
 
+// Initialize Deposits Tab
 let allDeposits = {};
 
 // Initialize Deposits Tab

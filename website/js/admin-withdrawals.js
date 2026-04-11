@@ -1,8 +1,8 @@
-/**
- * Admin Withdrawals Tab (Phase 9)
- * Real-time withdrawal request management and approval workflow
- */
+// Withdrawals Core
+const db = window.db;
+const auth = window.auth;
 
+// Initialize Withdrawals Tab
 let allWithdrawals = {};
 
 // Initialize Withdrawals Tab

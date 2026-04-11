@@ -28,46 +28,24 @@ const ShortlinkService = {
         try {
             console.log("🔗 Shortening URL:", longUrl.substring(0, 50) + "...");
             
-            // Build CORS-proxy request to bypass browser CORS restrictions
-            const corsUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(this.API_URL)}`;
-            
-            // Direct ShrinkEarn API call
+            // Use AllOrigins Proxy to bypass CORS
             const params = new URLSearchParams({
                 api: this.API_KEY,
                 url: longUrl
             });
+            const apiUrl = `${this.API_URL}?${params.toString()}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
             
-            const response = await fetch(`${this.API_URL}?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                }
-            });
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error("CORS Proxy failed");
             
-            // If response fails due to CORS, try alternative method
-            if (!response.ok) {
-                console.warn("⚠️ Direct API call failed, using endpoint without headers");
-                const altResponse = await fetch(`${this.API_URL}?api=${this.API_KEY}&url=${encodeURIComponent(longUrl)}`);
-                
-                if (!altResponse.ok) {
-                    throw new Error("ShrinkEarn API unavailable");
-                }
-                
-                const data = await altResponse.json();
-                
-                if (data.status === "success" && data.shortenedUrl) {
-                    this.cache[longUrl] = data.shortenedUrl;
-                    console.log("✅ Shortlink created:", data.shortenedUrl);
-                    return data.shortenedUrl;
-                }
-            } else {
-                const data = await response.json();
-                
-                if (data.status === "success" && data.shortenedUrl) {
-                    this.cache[longUrl] = data.shortenedUrl;
-                    console.log("✅ Shortlink created:", data.shortenedUrl);
-                    return data.shortenedUrl;
-                }
+            const proxyData = await response.json();
+            const data = JSON.parse(proxyData.contents);
+            
+            if (data.status === "success" && data.shortenedUrl) {
+                this.cache[longUrl] = data.shortenedUrl;
+                console.log("✅ Shortened (Proxy):", data.shortenedUrl);
+                return data.shortenedUrl;
             }
             
         } catch (error) {

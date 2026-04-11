@@ -11,33 +11,9 @@
     <link rel="stylesheet" href="css/responsive.css?v=2.6.5">
 </head>
 <body>
-    <!-- 🎯 TOP AD - HORIZONTAL BANNER (468x60) -->
-    <div class="ad-top" id="ad-top-1">
-        <script>
-            atOptions = {
-                'key' : 'e92210dbd77db33df4ffd95395c4c63a',
-                'format' : 'iframe',
-                'height' : 60,
-                'width' : 468,
-                'params' : {}
-            };
-        </script>
-        <script src="https://www.highperformanceformat.com/e92210dbd77db33df4ffd95395c4c63a/invoke.js"></script>
-    </div>
-    
-    <!-- TOP AD - HORIZONTAL BANNER (320x50) MOBILE -->
-    <div class="ad-top" id="ad-top-2" style="padding: 0.5rem 0; margin: 0.5rem 0;">
-        <script>
-            atOptions = {
-                'key' : 'd433d0b2a48765d197c04d4941789acb',
-                'format' : 'iframe',
-                'height' : 50,
-                'width' : 320,
-                'params' : {}
-            };
-        </script>
-        <script src="https://www.highperformanceformat.com/d433d0b2a48765d197c04d4941789acb/invoke.js"></script>
-    </div>
+    <!-- 🏙️ GLOBAL AD CONTAINERS -->
+    <div id="ad-portal-top" class="ad-top"></div>
+
 <div id="header-target"></div>
 
 <main class="main-layout">
@@ -63,19 +39,8 @@
     </div>
 </div>
 
-<!-- 🎯 MIDDLE AD -->
-<div class="ad-middle ad-inline" style="margin: 2rem auto; display: flex; justify-content: center; align-items: center;">
-    <script>
-        atOptions = {
-            'key' : '4c130fd19d0381c4f42d8cdf70579cad',
-            'format' : 'iframe',
-            'height' : 250,
-            'width' : 300,
-            'params' : {}
-        };
-    </script>
-    <script src="https://www.highperformanceformat.com/4c130fd19d0381c4f42d8cdf70579cad/invoke.js"></script>
-</div>
+<div id="ad-portal-middle" class="ad-middle ad-inline"></div>
+
 
 <div id="article-content" style="font-size: 1.2rem; color: #334155; line-height: 1.8;">
     <p class="skeleton" style="height: 20px; width: 90%; margin-bottom: 1rem;"></p>
@@ -101,38 +66,22 @@
 </section>
 
 <aside class="portal-sidebar">
-    <div class="ad-sidebar">
-        <div class="ad-sidebar-item">
-            <script>
-                atOptions = { 'key' : '57a8a217066802391ffd462b3e29a380', 'format' : 'iframe', 'height' : 300, 'width' : 160, 'params' : {} };
-            </script>
-            <script src="https://www.highperformanceformat.com/57a8a217066802391ffd462b3e29a380/invoke.js"></script>
-        </div>
-        <div class="ad-sidebar-item">
-            <script>
-                atOptions = { 'key' : 'cd98d03308146826f3d0f52131597280', 'format' : 'iframe', 'height' : 600, 'width' : 160, 'params' : {} };
-            </script>
-            <script src="https://www.highperformanceformat.com/cd98d03308146826f3d0f52131597280/invoke.js"></script>
-        </div>
-    </div>
+    <div id="ad-portal-side" class="ad-sidebar"></div>
+
 </aside>
 </main>
 
 <div id="footer-target"></div>
 
-<!-- 🎯 BOTTOM AD -->
-<div class="ad-bottom" id="ad-bottom-1">
-    <script>
-        atOptions = { 'key' : 'd433d0b2a48765d197c04d4941789acb', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {} };
-    </script>
-    <script src="https://www.highperformanceformat.com/d433d0b2a48765d197c04d4941789acb/invoke.js"></script>
-</div>
+<div id="ad-portal-bottom" class="ad-bottom"></div>
+
 
 <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-<script src="js/shortlink-service.js?v=2.8.0"></script>
 <script src="js/navigation.js?v=2.5.5"></script>
 <script src="js/realtime.js?v=2.5.5"></script>
+<script src="js/ads-manager.js?v=1.0.0"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -156,12 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const adScripts = [
                     { key: '4c130fd19d0381c4f42d8cdf70579cad', format: 'iframe', height: 250, width: 300 }, 
-                    { key: 'd433d0b2a48765d197c04d4941789acb', format: 'iframe', height: 50, width: 320 },
-                    { key: '57a8a217066802391ffd462b3e29a380', format: 'iframe', height: 300, width: 160 },
-                    { key: 'cd98d03308146826f3d0f52131597280', format: 'iframe', height: 600, width: 160 },
+                    { key: 'bfb9ddbec7e3e5681a5312f48a68bb2e', format: 'iframe', height: 90, width: 728 },
                     { key: 'e92210dbd77db33df4ffd95395c4c63a', format: 'iframe', height: 60, width: 468 },
-                    { type: 'cpm', src: 'https://pl29071707.profitablecpmratenetwork.com/78/7c/78/787c786a9cb2487ccb9000abb92ae3f1.js' } 
+                    { key: 'd433d0b2a48765d197c04d4941789acb', format: 'iframe', height: 50, width: 320 },
+                    { type: 'cpm', src: 'https://pl29071710.profitablecpmratenetwork.com/dafa116820cb26f5e3dc4219757633bf/invoke.js' },
+                    { type: 'cpm', src: 'https://pl29071708.profitablecpmratenetwork.com/be/d4/a7/bed4a7d2f891321adb05fbd064bb1832.js' },
+                    { type: 'cpm', src: 'https://pl29071707.profitablecpmratenetwork.com/78/7c/78/787c786a9cb2487ccb9000abb92ae3f1.js' }
                 ];
+
 
                 if (rawContent.includes('[AD_SLOT]')) {
                     articleContainer.innerHTML = '';

@@ -260,10 +260,48 @@
         /* Tab Management */
         .tab-content {
             display: none;
+            animation: fadeIn 0.4s ease-out;
         }
 
         .tab-content.active {
             display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Premium Badge Styles */
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-pending { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
+        .badge-approved { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Live Pulse */
+        .live-pulse {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
     </style>
 </head>
@@ -298,9 +336,8 @@
         </div>
         <div class="nav-item" onclick="AdminApp.setTab('analytics', this)"><i class="fas fa-users"></i> Users Hub</div>
         
-        <!-- Phase 9: New Earnings System Tabs -->
+        <!-- Phase 9: Specialised Earnings Tabs -->
         <hr style="border: 1px solid var(--border); margin: 1.5rem 0;">
-        <div class="nav-item" onclick="AdminApp.setTab('users-earnings', this)"><i class="fas fa-wallet"></i> Users (Earnings)</div>
         <div class="nav-item" onclick="AdminApp.setTab('withdrawals', this)"><i class="fas fa-money-bill-wave"></i> Withdrawals</div>
         <div class="nav-item" onclick="AdminApp.setTab('deposits', this)"><i class="fas fa-credit-card"></i> Deposits</div>
         <div class="nav-item" onclick="AdminApp.setTab('referrals', this)"><i class="fas fa-share-nodes"></i> Referrals</div>
@@ -337,18 +374,18 @@
 
         <!-- DASHBOARD TAB -->
         <div id="tab-dashboard" class="tab-content active">
-            <h1 style="font-weight: 900; margin-bottom: 2rem;">System Overview</h1>
-            <div class="grid">
-                <div class="glass-card">
-                    <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Total
-                        Users</span>
-                    <h2 id="stat-users" style="font-size: 2.5rem; font-weight: 900; margin-top: 10px;">0</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1 style="font-weight: 900; margin: 0;">System Overview</h1>
+                <div style="display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 50px; border: 1px solid var(--border);">
+                    <span class="live-pulse"></span>
+                    <span style="font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; color: #10b981;">REAL-TIME SYNC ACTIVE</span>
                 </div>
-                <div class="glass-card">
-                    <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Total Rewards
-                        Paid</span>
-                    <h2 id="stat-rewards"
-                        style="font-size: 2.5rem; font-weight: 900; margin-top: 10px; color: #10b981;">₹0</h2>
+            </div>
+            <div id="dashboard-tab-content">
+                <!-- Advanced Dashboard Injected by admin-dashboard.js -->
+                <div style="text-align: center; padding: 3rem; opacity: 0.5;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top: 1rem;">Initialising Advanced Analytics...</p>
                 </div>
             </div>
         </div>
@@ -478,42 +515,17 @@
         <!-- ANALYTICS / USERS TAB -->
         <div id="tab-analytics" class="tab-content">
             <h1 style="font-weight: 900; margin-bottom: 2rem;">Users Hub</h1>
-            <div class="glass-card">
-                <h3>Global User Base</h3>
-                <div style="margin-top: 1.5rem; overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
-                        <thead>
-                            <tr style="text-align: left; border-bottom: 1px solid var(--border);">
-                                <th style="padding: 1rem;">User ID</th>
-                                <th style="padding: 1rem;">Username</th>
-                                <th style="padding: 1rem;">Balance</th>
-                                <th style="padding: 1rem;">Status</th>
-                                <th style="padding: 1rem;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-list">
-                            <!-- Injected -->
-                        </tbody>
-                    </table>
+            <div id="users-tab-content">
+                <!-- Advanced Users Hub Injected by admin-users.js -->
+                <div style="text-align: center; padding: 3rem; opacity: 0.5;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top: 1rem;">Initialising User Hub...</p>
                 </div>
             </div>
         </div>
 
-        <!-- PHASE 9: NEW EARNINGS SYSTEM TABS -->
-        
-        <!-- DASHBOARD TAB (NEW) -->
-        <div id="tab-dashboard-earnings" class="tab-content">
-            <div id="dashboard-tab-content">
-                <!-- Injected by admin-dashboard.js -->
-            </div>
-        </div>
+        <!-- PHASE 9: SPECIALISED TABS -->
 
-        <!-- USERS EARNINGS TAB -->
-        <div id="tab-users-earnings" class="tab-content">
-            <div id="users-tab-content">
-                <!-- Injected by admin-users.js -->
-            </div>
-        </div>
 
         <!-- WITHDRAWALS TAB -->
         <div id="tab-withdrawals" class="tab-content">
@@ -550,7 +562,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
-    <script src="js/admin.js?v=2.7.0"></script>
+    <script type="module" src="js/admin.js?v=2.8.0"></script>
 </body>
 
 </html>

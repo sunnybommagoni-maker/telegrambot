@@ -1,7 +1,6 @@
-/**
- * Admin Dashboard Tab (Phase 9)
- * Real-time analytics and key metrics
- */
+// Dashboard Core
+const db = window.db;
+const auth = window.auth;
 
 // Initialize Dashboard Tab
 export async function initDashboardTab() {
@@ -97,18 +96,23 @@ function loadDashboardData() {
         
         snapshot.forEach((userSnapshot) => {
             const user = userSnapshot.val();
+            if (!user) return;
             users.push(user);
             
-            if (user.deposit_status) {
+            // Check for verification/activation status
+            if (user.deposit_status === 'approved' || user.activated) {
                 activeUsers.push(user);
             }
             
-            totalEarnings += (user.earnings?.total_earned || 0);
-            totalTasks += (user.earnings?.tasks_completed || 0);
+            const earnings = user.earnings || {};
+            // Use balance if total_earned is not available (common in some bot versions)
+            const userTotal = earnings.total_earned || user.balance || 0;
+            totalEarnings += userTotal;
+            totalTasks += (earnings.tasks_completed || 0);
             totalReferrals += (user.referrals?.referred_count || 0);
             
             if (user.referrals?.bonus_awarded) {
-                referralBonusTotal += 100; // Referrer bonus
+                referralBonusTotal += (user.referrals.bonus_amount || 100);
             }
         });
         
