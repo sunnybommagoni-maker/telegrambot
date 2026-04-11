@@ -17,7 +17,7 @@ const firebaseConfig = {
     messagingSenderId: "715270614018"
 };
 
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = window.db = firebase.database();
 const auth = window.auth = firebase.auth();
 window.firebase = firebase;
@@ -747,11 +747,14 @@ const AdminApp = {
         const users = Object.values(_allUsers);
         const today = new Date().toDateString();
         const todayUsers = users.filter(u => u.joined_at && new Date(u.joined_at * 1000).toDateString() === today).length;
-        const topBal = Math.max(...users.map(u => u.balance || 0), 0);
+        const balances = users.map(u => u.balance || 0);
+        const topBal = balances.length > 0 ? Math.max(...balances) : 0;
         setText('an-today', todayUsers);
-        setText('an-today', todayUsers);
-        setText('an-earnings-today', '₹' + users.filter(u => new Date((u.joined_at||0)*1000).toDateString() === today).reduce((s,u)=>s+(u.balance||0),0).toFixed(0));
-        setText('an-tasks-today', users.reduce((s,u)=>s+(u.earnings?.tasks_completed||0),0));
+        const todayEarnings = users
+            .filter(u => new Date((u.joined_at||0)*1000).toDateString() === today)
+            .reduce((s,u) => s + (u.balance||0), 0);
+        setText('an-earnings-today', '₹' + todayEarnings.toFixed(0));
+        setText('an-tasks-today', users.reduce((s,u) => s + (u.earnings?.tasks_completed||0), 0));
         setText('an-top-balance', '₹' + topBal.toFixed(0));
 
         // Top earners

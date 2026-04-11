@@ -1,5 +1,6 @@
 import logging
 import time
+import asyncio
 from telegram import Update, BotCommand
 from telegram.ext import (
     Application,
@@ -222,8 +223,6 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main():
     """Main execution loop"""
-    import asyncio
-
     keep_alive()
 
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()

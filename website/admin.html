@@ -550,12 +550,12 @@ select option{background:#0b0f1a}
 <!-- ═══ MOBILE NAV ═══ -->
 <div id="mob-nav">
   <div class="mob-grid">
-    <button class="mob-btn active" onclick="AdminApp.setTab('dashboard',this)"><i class="fas fa-chart-line"></i>Dash</button>
-    <button class="mob-btn" onclick="AdminApp.setTab('users',this)"><i class="fas fa-users"></i>Users</button>
-    <button class="mob-btn" onclick="AdminApp.setTab('deposits',this)"><i class="fas fa-credit-card"></i>Deps</button>
-    <button class="mob-btn" onclick="AdminApp.setTab('withdrawals',this)"><i class="fas fa-money-bill-wave"></i>W/D</button>
-    <button class="mob-btn" onclick="AdminApp.setTab('watch',this)"><i class="fas fa-play-circle"></i>Watch</button>
-    <button class="mob-btn" onclick="AdminApp.setTab('settings',this)"><i class="fas fa-cog"></i>Config</button>
+    <button class="mob-btn active" data-tab="dashboard" onclick="AdminApp.setTab('dashboard',this)"><i class="fas fa-chart-line"></i>Dash</button>
+    <button class="mob-btn" data-tab="users" onclick="AdminApp.setTab('users',this)"><i class="fas fa-users"></i>Users</button>
+    <button class="mob-btn" data-tab="deposits" onclick="AdminApp.setTab('deposits',this)"><i class="fas fa-credit-card"></i>Deps</button>
+    <button class="mob-btn" data-tab="withdrawals" onclick="AdminApp.setTab('withdrawals',this)"><i class="fas fa-money-bill-wave"></i>W/D</button>
+    <button class="mob-btn" data-tab="watch" onclick="AdminApp.setTab('watch',this)"><i class="fas fa-play-circle"></i>Watch</button>
+    <button class="mob-btn" data-tab="settings" onclick="AdminApp.setTab('settings',this)"><i class="fas fa-cog"></i>Config</button>
   </div>
 </div>
 
@@ -628,6 +628,6 @@ select option{background:#0b0f1a}
 <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
-<script type="module" src="js/admin.js?v=3.0.0"></script>
+<script src="js/admin.js?v=3.1.0"></script>
 </body>
 </html>
