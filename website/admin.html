@@ -1,568 +1,633 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surface Hub Admin • Enterprise Control</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/responsive.css?v=2.7.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surface Hub — Admin Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --p: #3b82f6; --p2: #6366f1; --g: linear-gradient(135deg,#3b82f6,#6366f1);
+  --bg: #060810; --sb: #0b0f1a; --card: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.07); --muted: rgba(255,255,255,0.45);
+  --success:#10b981; --warn:#f59e0b; --danger:#ef4444; --info:#06b6d4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:#fff;display:flex;height:100vh;overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit;color:#fff;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;outline:none;transition:.2s}
+input:focus,textarea:focus,select:focus{border-color:var(--p);background:rgba(59,130,246,0.08)}
+select option{background:#0b0f1a}
 
-    <style>
-        :root {
-            --p: #0076ff;
-            /* Royal Blue */
-            --p-dark: #0056b3;
-            --bg: #05070a;
-            --sidebar: #0a0d14;
-            --card: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.08);
-            --text-muted: rgba(255, 255, 255, 0.5);
-        }
+/* ── LOGIN ─────────────────────────────── */
+#login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+.login-box{background:var(--sb);border:1px solid var(--border);border-radius:24px;padding:3rem 2.5rem;width:100%;max-width:400px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.login-logo{font-size:2rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.4rem}
+.login-sub{font-size:.8rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:2rem}
+.login-box input{margin-bottom:1rem;text-align:center}
+.btn-login{width:100%;background:var(--g);color:#fff;border:none;padding:14px;border-radius:12px;font-size:1rem;font-weight:700;transition:.3s}
+.btn-login:hover{opacity:.9;transform:translateY(-1px)}
+#loginError{color:var(--danger);font-size:.8rem;margin-top:.8rem;display:none}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+/* ── LAYOUT ─────────────────────────────── */
+.sidebar{width:260px;background:var(--sb);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 1rem;flex-shrink:0;overflow-y:auto}
+.main-content{flex:1;overflow-y:auto;padding:2rem;background:radial-gradient(ellipse at 80% 0%,rgba(99,102,241,0.07) 0%,transparent 60%)}
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg);
-            color: #fff;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+/* ── SIDEBAR ─────────────────────────────── */
+.sb-logo{font-weight:900;font-size:1.2rem;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;padding:.5rem .8rem 1.5rem;letter-spacing:-0.5px}
+.sb-section{font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:.5rem .8rem .3rem;margin-top:.5rem}
+.nav-item{display:flex;align-items:center;gap:10px;padding:.7rem .9rem;border-radius:10px;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;transition:.2s;position:relative;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:#fff}
+.nav-item.active{background:rgba(59,130,246,0.15);color:#fff;border:1px solid rgba(59,130,246,0.3)}
+.nav-item.active i{color:var(--p)}
+.nav-item i{width:18px;text-align:center}
+.badge{background:var(--danger);color:#fff;border-radius:50px;padding:1px 7px;font-size:.65rem;font-weight:700;margin-left:auto}
+.pulse-dot{width:7px;height:7px;background:var(--success);border-radius:50%;animation:pulse 2s infinite;margin-left:auto}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+.sb-bottom{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border)}
+.admin-tag{font-size:.7rem;color:var(--muted);padding:.5rem .8rem}
 
-        /* Login Screen */
-        #login-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+/* ── TOP BAR ─────────────────────────────── */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.topbar h1{font-weight:900;font-size:1.5rem}
+.live-chip{display:flex;align-items:center;gap:7px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);padding:6px 14px;border-radius:50px;font-size:.7rem;font-weight:700;color:var(--success);letter-spacing:1px}
 
-        .login-card {
-            background: var(--sidebar);
-            padding: 3rem;
-            border-radius: 24px;
-            border: 1px solid var(--border);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        }
+/* ── CARDS ─────────────────────────────── */
+.glass-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.5rem;margin-bottom:1.5rem;backdrop-filter:blur(10px)}
+.grid{display:grid;gap:1rem}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
 
-        /* Main Setup */
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 2rem;
-            flex-shrink: 0;
-            transition: 0.3s;
-        }
+/* ── KPI CARDS ─────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.2rem;transition:.2s}
+.kpi:hover{border-color:rgba(59,130,246,0.4);transform:translateY(-2px)}
+.kpi-icon{font-size:1.3rem;margin-bottom:.5rem}
+.kpi-value{font-size:1.8rem;font-weight:900;line-height:1}
+.kpi-label{font-size:.7rem;color:var(--muted);margin-top:.3rem;letter-spacing:.5px;text-transform:uppercase}
+.kpi-delta{font-size:.72rem;margin-top:.4rem;font-weight:600}
+.kpi-delta.up{color:var(--success)} .kpi-delta.down{color:var(--danger)}
 
-        .main-content {
-            flex-grow: 1;
-            padding: 3rem;
-            overflow-y: auto;
-            background: radial-gradient(circle at top right, rgba(0, 118, 255, 0.05), transparent);
-            transition: 0.3s;
-        }
+/* ── BUTTONS ─────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:10px;font-size:.82rem;font-weight:700;border:none;transition:.25s;cursor:pointer}
+.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn-primary{background:var(--g);color:#fff}
+.btn-success{background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
+.btn-warn{background:rgba(245,158,11,.15);color:var(--warn);border:1px solid rgba(245,158,11,.3)}
+.btn-info{background:rgba(6,182,212,.15);color:var(--info);border:1px solid rgba(6,182,212,.3)}
+.btn-ghost{background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--border)}
+.btn-sm{padding:5px 12px;font-size:.75rem}
+.btn-block{width:100%;justify-content:center;padding:12px}
 
-        /* Mobile Adjustments (OnePlus Nord 3 5G Optimized) */
-        @media (max-width: 992px) {
-            body {
-                flex-direction: column;
-            }
+/* ── TABS ─────────────────────────────── */
+.tab-content{display:none;animation:fadeUp .35s ease}
+.tab-content.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-            .sidebar {
-                display: none;
-            }
+/* ── TABLES / LISTS ─────────────────────────────── */
+.data-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.data-table th{padding:10px 14px;text-align:left;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border)}
+.data-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+.data-table tr:hover td{background:rgba(255,255,255,0.02)}
+.table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border)}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--g);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
 
-            .main-content {
-                padding: 1.5rem;
-                padding-bottom: 100px;
-            }
+/* ── STATUS CHIPS ─────────────────────────────── */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:50px;font-size:.68rem;font-weight:700}
+.chip-pending{background:rgba(245,158,11,.15);color:var(--warn);border:1px solid rgba(245,158,11,.3)}
+.chip-approved,.chip-active{background:rgba(16,185,129,.15);color:var(--success);border:1px solid rgba(16,185,129,.3)}
+.chip-rejected,.chip-banned{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
+.chip-info{background:rgba(6,182,212,.15);color:var(--info);border:1px solid rgba(6,182,212,.3)}
 
-            .grid {
-                grid-template-columns: 1fr !important;
-            }
+/* ── FORMS ─────────────────────────────── */
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:.4rem;font-weight:600;letter-spacing:.3px}
+.form-group small{display:block;font-size:.7rem;color:var(--muted);margin-top:.3rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:.85rem;font-weight:600}
+.toggle-desc{font-size:.72rem;color:var(--muted);margin-top:2px}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#2a2e3a;border-radius:50px;cursor:pointer;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-switch input:checked+.toggle-slider{background:var(--p)}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px)}
 
-            .logo {
-                display: none;
-            }
+/* ── ACTIVITY FEED ─────────────────────────────── */
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:.9rem 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.act-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.act-text{flex:1;font-size:.82rem;line-height:1.4}
+.act-time{font-size:.7rem;color:var(--muted)}
 
-            #mobile-bottom-nav {
-                display: flex !important;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 70px;
-                background: var(--sidebar);
-                border-top: 1px solid var(--border);
-                z-index: 1000;
-                backdrop-filter: blur(20px);
-                justify-content: space-around;
-                align-items: center;
-                padding-bottom: env(safe-area-inset-bottom);
-            }
+/* ── SCREENSHOTS ─────────────────────────────── */
+.screenshot-thumb{width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--border);transition:.2s}
+.screenshot-thumb:hover{transform:scale(1.1);border-color:var(--p)}
 
-            .nav-item-m {
-                background: none;
-                border: none;
-                color: var(--text-muted);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 5px;
-                font-size: 0.7rem;
-                font-family: inherit;
-                font-weight: 600;
-                cursor: pointer;
-            }
+/* ── SEARCH BAR ─────────────────────────────── */
+.search-bar{position:relative;margin-bottom:1rem}
+.search-bar input{padding-left:38px}
+.search-bar i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem}
 
-            .nav-item-m i {
-                font-size: 1.2rem;
-            }
+/* ── FILTER BAR ─────────────────────────────── */
+.filter-bar{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.filter-bar select{width:auto;padding:7px 12px;font-size:.8rem}
 
-            .nav-item-m.active {
-                color: var(--p);
-            }
-        }
+/* ── BROADCAST ─────────────────────────────── */
+.bc-item{background:rgba(255,255,255,0.03);border-radius:12px;padding:1rem;border:1px solid var(--border);margin-bottom:.8rem;display:flex;gap:12px;align-items:flex-start}
+.bc-status{padding:3px 10px;border-radius:50px;font-size:.65rem;font-weight:700;text-transform:uppercase}
+.bc-pending{background:rgba(245,158,11,.15);color:var(--warn)}
+.bc-sent{background:rgba(16,185,129,.15);color:var(--success)}
+.bc-failed{background:rgba(239,68,68,.15);color:var(--danger)}
 
-        #mobile-bottom-nav {
-            display: none;
-        }
+/* ── WATCH / CONTENT CARDS ─────────────────────────────── */
+.content-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:.2s}
+.content-card:hover{border-color:rgba(99,102,241,.4);transform:translateY(-2px)}
+.content-card img{width:100%;height:160px;object-fit:cover}
+.content-card-body{padding:1rem}
+.content-card-body h4{font-size:.9rem;font-weight:700;margin-bottom:.3rem}
+.content-card-body p{font-size:.75rem;color:var(--muted);line-height:1.5}
+.content-card-actions{display:flex;gap:.5rem;padding:.8rem 1rem;border-top:1px solid var(--border)}
 
-        .logo {
-            font-weight: 900;
-            font-size: 1.5rem;
-            margin-bottom: 3rem;
-            color: var(--p);
-            letter-spacing: -1px;
-        }
+/* ── ANALYTICS ─────────────────────────────── */
+.chart-bar-wrap{margin-top:1rem}
+.chart-label{font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:.3rem}
+.chart-bar-bg{background:rgba(255,255,255,0.06);border-radius:50px;height:8px;overflow:hidden}
+.chart-bar-fill{height:100%;border-radius:50px;background:var(--g);transition:width 1s ease}
+.top-earner{display:flex;align-items:center;gap:12px;padding:.7rem 0;border-bottom:1px solid var(--border)}
+.top-earner:last-child{border-bottom:none}
+.rank{font-size:1rem;font-weight:900;width:28px;text-align:center}
+.rank-1{color:#f59e0b} .rank-2{color:#9ca3af} .rank-3{color:#b45309}
 
-        .nav-item {
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
+/* ── EMPTY STATE ─────────────────────────────── */
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-state i{font-size:2.5rem;margin-bottom:.8rem;display:block}
+.empty-state p{font-size:.85rem}
 
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-        }
+/* ── IMAGE PREVIEW ─────────────────────────────── */
+.img-preview{width:100%;height:180px;border-radius:12px;object-fit:cover;display:none;margin-top:.5rem}
 
-        .nav-item.active {
-            background: var(--p);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(0, 118, 255, 0.3);
-        }
+/* ── TOAST ─────────────────────────────── */
+#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);background:#1e2436;color:#fff;padding:.8rem 1.5rem;border-radius:12px;font-size:.85rem;font-weight:600;z-index:9999;transition:.4s;border:1px solid var(--border)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.success{border-color:var(--success);color:var(--success)}
+#toast.error{border-color:var(--danger);color:var(--danger)}
 
-        /* Dashboard Components */
-        .glass-card {
-            background: var(--card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
+/* ── MODAL ─────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:8000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--sb);border:1px solid var(--border);border-radius:20px;padding:2rem;width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:1.1rem;font-weight:700;margin-bottom:1.2rem}
+.modal-close{float:right;background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer}
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
+/* ── MOBILE ─────────────────────────────── */
+#mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sb);border-top:1px solid var(--border);z-index:1000;padding:.5rem}
+#mob-nav .mob-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.2rem}
+.mob-btn{background:none;border:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.55rem;font-weight:600;padding:.4rem 0;border-radius:8px;width:100%;cursor:pointer}
+.mob-btn i{font-size:1.1rem}
+.mob-btn.active{color:var(--p)}
+@media(max-width:900px){
+  .sidebar{display:none}
+  #mob-nav{display:block}
+  .main-content{padding:1.2rem;padding-bottom:90px}
+  .form-row{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
 
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: #fff;
-            margin-top: 8px;
-            font-family: inherit;
-            outline: none;
-            transition: 0.3s;
-        }
+<!-- ═══ LOGIN OVERLAY ═══ -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">⚡ SURFACE HUB</div>
+    <div class="login-sub">Admin Console v3.0</div>
+    <input type="email" id="adminEmail" placeholder="Admin Email">
+    <input type="password" id="adminPassword" placeholder="Password" onkeydown="if(event.key==='Enter')AdminApp.login()">
+    <button class="btn-login" onclick="AdminApp.login()">ESTABLISH SECURE LINK</button>
+    <p id="loginError"></p>
+  </div>
+</div>
 
-        input:focus {
-            border-color: var(--p);
-            background: rgba(255, 255, 255, 0.08);
-        }
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar">
+  <div class="sb-logo">⚡ Admin Console</div>
 
-        .btn-primary {
-            background: var(--p);
-            color: #fff;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-weight: 900;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 20px;
-        }
+  <div class="sb-section">Main</div>
+  <button class="nav-item active" data-tab="dashboard" onclick="AdminApp.setTab('dashboard',this)">
+    <i class="fas fa-chart-line"></i> Dashboard <span class="pulse-dot"></span>
+  </button>
+  <button class="nav-item" data-tab="users" onclick="AdminApp.setTab('users',this)">
+    <i class="fas fa-users"></i> Users <span class="badge" id="badge-users" style="display:none">0</span>
+  </button>
+  <button class="nav-item" data-tab="analytics" onclick="AdminApp.setTab('analytics',this)">
+    <i class="fas fa-chart-bar"></i> Analytics
+  </button>
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 118, 255, 0.4);
-        }
+  <div class="sb-section">Finance</div>
+  <button class="nav-item" data-tab="deposits" onclick="AdminApp.setTab('deposits',this)">
+    <i class="fas fa-credit-card"></i> Deposits <span class="badge" id="badge-deposits" style="display:none">0</span>
+  </button>
+  <button class="nav-item" data-tab="withdrawals" onclick="AdminApp.setTab('withdrawals',this)">
+    <i class="fas fa-money-bill-wave"></i> Withdrawals <span class="badge" id="badge-withdrawals" style="display:none">0</span>
+  </button>
+  <button class="nav-item" data-tab="referrals" onclick="AdminApp.setTab('referrals',this)">
+    <i class="fas fa-share-nodes"></i> Referrals
+  </button>
 
-        .inventory-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 12px;
-            margin-bottom: 0.8rem;
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
+  <div class="sb-section">Content</div>
+  <button class="nav-item" data-tab="watch" onclick="AdminApp.setTab('watch',this)">
+    <i class="fas fa-play-circle"></i> Watch Posts
+  </button>
+  <button class="nav-item" data-tab="content" onclick="AdminApp.setTab('content',this)">
+    <i class="fas fa-newspaper"></i> Hub Content
+  </button>
+  <button class="nav-item" data-tab="tasks" onclick="AdminApp.setTab('tasks',this)">
+    <i class="fas fa-tasks"></i> Earn Tasks
+  </button>
+  <button class="nav-item" data-tab="broadcast" onclick="AdminApp.setTab('broadcast',this)">
+    <i class="fas fa-bullhorn"></i> Broadcast
+  </button>
 
-        .inventory-item:hover {
-            border-color: var(--border);
-            background: rgba(255, 255, 255, 0.04);
-        }
+  <div class="sb-section">System</div>
+  <button class="nav-item" data-tab="settings" onclick="AdminApp.setTab('settings',this)">
+    <i class="fas fa-sliders-h"></i> Settings
+  </button>
 
-        .image-preview {
-            width: 100%;
-            height: 180px;
-            border-radius: 12px;
-            background: #000;
-            margin-top: 15px;
-            display: none;
-            object-fit: cover;
-        }
+  <div class="sb-bottom">
+    <div class="admin-tag" id="admin-email-tag">Not logged in</div>
+    <button class="nav-item" onclick="AdminApp.logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</nav>
 
-        /* Tab Management */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease-out;
-        }
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="main-content">
 
-        .tab-content.active {
-            display: block;
-        }
+<!-- ╔══ DASHBOARD ══╗ -->
+<div id="tab-dashboard" class="tab-content active">
+  <div class="topbar">
+    <h1>📊 System Overview</h1>
+    <div class="live-chip"><i class="fas fa-circle" style="font-size:.4rem"></i> REAL-TIME SYNC</div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-icon">👥</div><div class="kpi-value" id="kpi-users">—</div><div class="kpi-label">Total Users</div><div class="kpi-delta up" id="kpi-active-users">Active: —</div></div>
+    <div class="kpi"><div class="kpi-icon">💰</div><div class="kpi-value" id="kpi-earnings">—</div><div class="kpi-label">Total Earnings</div><div class="kpi-delta" id="kpi-distributed">Dist: —</div></div>
+    <div class="kpi"><div class="kpi-icon">🎯</div><div class="kpi-value" id="kpi-tasks">—</div><div class="kpi-label">Tasks Done</div><div class="kpi-delta up" id="kpi-avg-tasks">Avg: —</div></div>
+    <div class="kpi"><div class="kpi-icon">💳</div><div class="kpi-value" id="kpi-dep-pending">—</div><div class="kpi-label">Pending Deps</div><div class="kpi-delta" id="kpi-dep-approved">Approved: —</div></div>
+    <div class="kpi"><div class="kpi-icon">💸</div><div class="kpi-value" id="kpi-with-pending">—</div><div class="kpi-label">Pending W/D</div><div class="kpi-delta" id="kpi-with-amount">Amount: —</div></div>
+    <div class="kpi"><div class="kpi-icon">🤝</div><div class="kpi-value" id="kpi-referrals">—</div><div class="kpi-label">Referrals</div><div class="kpi-delta up" id="kpi-ref-bonus">Bonus: —</div></div>
+  </div>
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+  <div class="grid grid-2">
+    <div class="glass-card">
+      <h3 style="margin-bottom:1rem;font-size:.95rem">📌 Live Activity</h3>
+      <div id="activity-feed">
+        <div class="empty-state"><i class="fas fa-satellite-dish"></i><p>Waiting for activity...</p></div>
+      </div>
+    </div>
+    <div class="glass-card">
+      <h3 style="margin-bottom:1rem;font-size:.95rem">⚡ Quick Actions</h3>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <button class="btn btn-warn btn-block" onclick="AdminApp.setTab('deposits',document.querySelector('[data-tab=deposits]'))"><i class="fas fa-credit-card"></i> Review Pending Deposits</button>
+        <button class="btn btn-info btn-block" onclick="AdminApp.setTab('withdrawals',document.querySelector('[data-tab=withdrawals]'))"><i class="fas fa-money-bill-wave"></i> Process Withdrawals</button>
+        <button class="btn btn-primary btn-block" onclick="AdminApp.setTab('broadcast',document.querySelector('[data-tab=broadcast]'))"><i class="fas fa-bullhorn"></i> Send Broadcast</button>
+        <button class="btn btn-success btn-block" onclick="AdminApp.setTab('watch',document.querySelector('[data-tab=watch]'))"><i class="fas fa-play-circle"></i> Add Watch Post</button>
+        <button class="btn btn-ghost btn-block" onclick="AdminApp.setTab('settings',document.querySelector('[data-tab=settings]'))"><i class="fas fa-sliders-h"></i> Bot Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-        /* Premium Badge Styles */
-        .status-badge {
-            padding: 6px 14px;
-            border-radius: 50px;
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+<!-- ╔══ USERS ══╗ -->
+<div id="tab-users" class="tab-content">
+  <div class="topbar"><h1>👥 User Management</h1><span id="user-count-label" style="color:var(--muted);font-size:.85rem"></span></div>
+  <div class="glass-card">
+    <div class="filter-bar">
+      <div class="search-bar" style="flex:1;min-width:200px"><i class="fas fa-search"></i><input type="text" id="user-search" placeholder="Search by ID, name..."></div>
+      <select id="user-status-filter" style="width:150px">
+        <option value="">All Users</option>
+        <option value="active">✅ Active</option>
+        <option value="inactive">⏳ Inactive</option>
+        <option value="banned">🚫 Banned</option>
+      </select>
+      <select id="user-sort" style="width:150px">
+        <option value="newest">Newest First</option>
+        <option value="balance">By Balance</option>
+        <option value="tasks">By Tasks</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>User</th><th>Balance</th><th>Tasks</th><th>Status</th><th>Last Active</th><th>Actions</th></tr></thead>
+        <tbody id="users-tbody"><tr><td colspan="6"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading users...</p></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-        .badge-pending { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
-        .badge-approved { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+<!-- ╔══ ANALYTICS ══╗ -->
+<div id="tab-analytics" class="tab-content">
+  <div class="topbar"><h1>📈 Platform Analytics</h1></div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-icon">📅</div><div class="kpi-value" id="an-today">—</div><div class="kpi-label">Users Today</div></div>
+    <div class="kpi"><div class="kpi-icon">💵</div><div class="kpi-value" id="an-earnings-today">—</div><div class="kpi-label">Earned Today</div></div>
+    <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-value" id="an-tasks-today">—</div><div class="kpi-label">Tasks Today</div></div>
+    <div class="kpi"><div class="kpi-icon">🏆</div><div class="kpi-value" id="an-top-balance">—</div><div class="kpi-label">Top Balance</div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">🏆 Top Earners</h3>
+      <div id="top-earners-list"><div class="empty-state"><i class="fas fa-trophy"></i><p>No data yet</p></div></div>
+    </div>
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">📊 Earnings Breakdown</h3>
+      <div id="earnings-breakdown"></div>
+    </div>
+  </div>
+</div>
 
-        /* Live Pulse */
-        .live-pulse {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
-            animation: pulse 2s infinite;
-        }
+<!-- ╔══ DEPOSITS ══╗ -->
+<div id="tab-deposits" class="tab-content">
+  <div class="topbar"><h1>💳 Deposit Verification</h1></div>
+  <div class="filter-bar">
+    <select id="dep-filter" onchange="AdminApp.filterDeposits()">
+      <option value="">All Deposits</option>
+      <option value="pending">⏳ Pending</option>
+      <option value="approved">✅ Approved</option>
+      <option value="rejected">❌ Rejected</option>
+    </select>
+    <div style="margin-left:auto;display:flex;gap:.5rem">
+      <span class="chip chip-pending" id="dep-pending-count">0 Pending</span>
+      <span class="chip chip-approved" id="dep-approved-count">0 Approved</span>
+    </div>
+  </div>
+  <div id="deposits-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading deposits...</p></div></div>
+</div>
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-    </style>
-</head>
+<!-- ╔══ WITHDRAWALS ══╗ -->
+<div id="tab-withdrawals" class="tab-content">
+  <div class="topbar"><h1>💸 Withdrawal Queue</h1></div>
+  <div class="filter-bar">
+    <select id="with-filter" onchange="AdminApp.filterWithdrawals()">
+      <option value="">All Requests</option>
+      <option value="pending">⏳ Pending</option>
+      <option value="approved">✅ Approved</option>
+      <option value="rejected">❌ Rejected</option>
+    </select>
+    <div style="margin-left:auto;display:flex;gap:.5rem">
+      <span class="chip chip-pending" id="with-pending-count">0 Pending</span>
+      <span class="chip chip-info" id="with-total-amount">₹0 Due</span>
+    </div>
+  </div>
+  <div id="withdrawals-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading withdrawals...</p></div></div>
+</div>
 
-<body>
+<!-- ╔══ REFERRALS ══╗ -->
+<div id="tab-referrals" class="tab-content">
+  <div class="topbar"><h1>🤝 Referral Network</h1></div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-icon">👥</div><div class="kpi-value" id="ref-kpi-referrers">—</div><div class="kpi-label">Active Referrers</div></div>
+    <div class="kpi"><div class="kpi-icon">🔗</div><div class="kpi-value" id="ref-kpi-total">—</div><div class="kpi-label">Total Referrals</div></div>
+    <div class="kpi"><div class="kpi-icon">💰</div><div class="kpi-value" id="ref-kpi-bonus">—</div><div class="kpi-label">Bonus Awarded</div></div>
+  </div>
+  <div class="glass-card">
+    <div class="search-bar" style="margin-bottom:1rem"><i class="fas fa-search"></i><input type="text" id="ref-search" placeholder="Search referrers..."></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Referrer</th><th>Code</th><th>Referred</th><th>Bonus</th><th>Actions</th></tr></thead>
+        <tbody id="referrals-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-    <!-- 🔒 LOGIN OVERLAY -->
-    <div id="login-overlay">
-        <div class="login-card">
-            <div class="logo">SURFACE ADMIN HUB</div>
-            <p style="opacity: 0.6; margin-bottom: 2rem;">Secure Terminal Access Required.</p>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <input type="email" id="adminEmail" placeholder="Administrator Email" style="text-align:center;">
-                <input type="password" id="adminPassword" placeholder="Master Password" style="text-align:center;">
-                <button class="btn-primary" style="width:100%" onclick="AdminApp.login()">ESTABLISH SECURE LINK</button>
-            </div>
-            <p id="loginError" style="color:#ff4d4d; font-size:0.8rem; margin-top:15px; display:none;"></p>
-            <div style="margin-top: 2rem; font-size: 0.7rem; opacity: 0.3; letter-spacing: 1px;">
-                SESSION LOGGING ACTIVE • SURFACE HUB SEC
-            </div>
+<!-- ╔══ WATCH POSTS ══╗ -->
+<div id="tab-watch" class="tab-content">
+  <div class="topbar">
+    <h1>📺 Watch Posts</h1>
+    <button class="btn btn-primary" onclick="AdminApp.openWatchModal()"><i class="fas fa-plus"></i> New Post</button>
+  </div>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:1rem">Posts appear on <strong>watch.html</strong> — accessible from the bot via the 📺 Watch button. Each post has an image, video link, title & description.</p>
+  <div class="grid grid-3" id="watch-posts-grid">
+    <div class="empty-state" style="grid-column:1/-1"><i class="fas fa-play-circle"></i><p>No watch posts yet. Create one above.</p></div>
+  </div>
+</div>
+
+<!-- ╔══ HUB CONTENT ══╗ -->
+<div id="tab-content" class="tab-content">
+  <div class="topbar">
+    <h1>📝 Hub Content</h1>
+    <button class="btn btn-primary" onclick="AdminApp.openContentModal()"><i class="fas fa-plus"></i> New Post</button>
+  </div>
+  <div class="grid grid-3" id="content-grid">
+    <div class="empty-state" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i><p>Loading posts...</p></div>
+  </div>
+</div>
+
+<!-- ╔══ EARN TASKS ══╗ -->
+<div id="tab-tasks" class="tab-content">
+  <div class="topbar"><h1>🎯 Earn Tasks</h1></div>
+  <div class="grid grid-2">
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">➕ Add New Task</h3>
+      <div class="form-group"><label>Task Title</label><input type="text" id="task-title" placeholder="Subscribe to YouTube channel"></div>
+      <div class="form-group"><label>Destination URL</label><input type="url" id="task-url" placeholder="https://youtube.com/..."></div>
+      <div class="form-row">
+        <div class="form-group"><label>Reward (₹)</label><input type="number" id="task-reward-amt" value="10" min="1"></div>
+        <div class="form-group"><label>Category</label>
+          <select id="task-category">
+            <option value="social">Social Media</option>
+            <option value="video">Watch Video</option>
+            <option value="follow">Follow/Subscribe</option>
+            <option value="website">Visit Website</option>
+          </select>
         </div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="AdminApp.saveTask()"><i class="fas fa-save"></i> Save & Sync</button>
+    </div>
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">📋 Active Tasks (<span id="task-total-count">0</span>)</h3>
+      <div id="task-list" style="max-height:420px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══ BROADCAST ══╗ -->
+<div id="tab-broadcast" class="tab-content">
+  <div class="topbar"><h1>📢 Global Broadcast</h1></div>
+  <div class="grid grid-2">
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">📝 Compose Message</h3>
+      <div class="form-group"><label>Message</label><textarea id="bc-msg" rows="5" placeholder="Announce something to all users..."></textarea></div>
+      <div class="form-group"><label>Image URL (Optional)</label><input type="url" id="bc-img" placeholder="https://..."></div>
+      <div class="form-group"><label>Link Button (Optional)</label><input type="url" id="bc-link" placeholder="https://..."></div>
+      <div class="form-group"><label>Button Label</label><input type="text" id="bc-link-label" placeholder="Open Link"></div>
+      <div style="display:flex;gap:.7rem;margin-top:.5rem">
+        <button class="btn btn-primary" style="flex:1" onclick="AdminApp.sendBroadcast()"><i class="fas fa-paper-plane"></i> Send to All Users</button>
+      </div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.7rem">⚠️ This queues a message that the bot will send to <strong>all users</strong>.</p>
+    </div>
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">📬 Broadcast Queue</h3>
+      <div id="bc-list"><div class="empty-state"><i class="fas fa-inbox"></i><p>No broadcasts queued</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══ SETTINGS ══╗ -->
+<div id="tab-settings" class="tab-content">
+  <div class="topbar"><h1>⚙️ System Settings</h1><button class="btn btn-primary" onclick="AdminApp.saveSettings()"><i class="fas fa-save"></i> Save All Settings</button></div>
+  <div class="grid grid-2">
+    <!-- BOT CONTROL -->
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">🤖 Bot Control <span class="chip chip-info" style="font-size:.65rem;margin-left:.5rem">Realtime</span></h3>
+      <div class="toggle-row">
+        <div><div class="toggle-label">🔧 Maintenance Mode</div><div class="toggle-desc">All bot commands return maintenance message</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="cfg-maintenance"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">💰 Earning Enabled</div><div class="toggle-desc">Users can earn via tasks & referrals</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="cfg-earn-enabled" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">💳 Deposits Open</div><div class="toggle-desc">Users can submit deposit requests</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="cfg-deposits-open" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">💸 Withdrawals Open</div><div class="toggle-desc">Users can request withdrawals</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="cfg-withdrawals-open" checked><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">📺 Watch Feature</div><div class="toggle-desc">Show Watch button in bot menu</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="cfg-watch-enabled" checked><span class="toggle-slider"></span></label>
+      </div>
     </div>
 
-    <!-- Sidebar Navigation -->
-    <nav class="sidebar">
-        <div class="logo">Admin Console</div>
-        <div class="nav-item active" onclick="AdminApp.setTab('dashboard', this)"><i class="fas fa-chart-line"></i>
-            Dashboard</div>
-        <div class="nav-item" onclick="AdminApp.setTab('posts', this)"><i class="fas fa-edit"></i> Manage Posts</div>
-        <div class="nav-item" onclick="AdminApp.setTab('tasks', this)"><i class="fas fa-tasks"></i> Task Earn</div>
-        <div class="nav-item" onclick="AdminApp.setTab('broadcast', this)"><i class="fas fa-bullhorn"></i> Broadcast
-        </div>
-        <div class="nav-item" onclick="AdminApp.setTab('analytics', this)"><i class="fas fa-users"></i> Users Hub</div>
-        
-        <!-- Phase 9: Specialised Earnings Tabs -->
-        <hr style="border: 1px solid var(--border); margin: 1.5rem 0;">
-        <div class="nav-item" onclick="AdminApp.setTab('withdrawals', this)"><i class="fas fa-money-bill-wave"></i> Withdrawals</div>
-        <div class="nav-item" onclick="AdminApp.setTab('deposits', this)"><i class="fas fa-credit-card"></i> Deposits</div>
-        <div class="nav-item" onclick="AdminApp.setTab('referrals', this)"><i class="fas fa-share-nodes"></i> Referrals</div>
-        <div class="nav-item" onclick="AdminApp.setTab('settings', this)"><i class="fas fa-cog"></i> Settings</div>
-
-        <div style="margin-top: auto;">
-            <div class="nav-item" onclick="location.reload()"><i class="fas fa-sign-out-alt"></i> Logout</div>
-        </div>
-    </nav>
-
-    <!-- Mobile Bottom Navigation (Visible on < 992px) -->
-    <div id="mobile-bottom-nav">
-        <button class="nav-item-m active" onclick="AdminApp.setTab('dashboard', this); updateMobileActive(this)"><i
-                class="fas fa-chart-line"></i><span>Dash</span></button>
-        <button class="nav-item-m" onclick="AdminApp.setTab('posts', this); updateMobileActive(this)"><i
-                class="fas fa-edit"></i><span>Posts</span></button>
-        <button class="nav-item-m" onclick="AdminApp.setTab('tasks', this); updateMobileActive(this)"><i
-                class="fas fa-tasks"></i><span>Tasks</span></button>
-        <button class="nav-item-m" onclick="AdminApp.setTab('broadcast', this); updateMobileActive(this)"><i
-                class="fas fa-bullhorn"></i><span>Blast</span></button>
-        <button class="nav-item-m" onclick="AdminApp.setTab('users-earnings', this); updateMobileActive(this)"><i
-                class="fas fa-wallet"></i><span>Earn</span></button>
+    <!-- EARNING CONFIG -->
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">💰 Earning Configuration</h3>
+      <div class="form-group"><label>Deposit Amount (₹)</label><input type="number" id="cfg-deposit-amount" value="50"><small>Required to activate account</small></div>
+      <div class="form-group"><label>Task Reward (₹)</label><input type="number" id="cfg-task-reward" value="10"><small>Per completed task</small></div>
+      <div class="form-group"><label>Minimum Withdrawal (₹)</label><input type="number" id="cfg-min-withdraw" value="500"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Referrer Bonus (₹)</label><input type="number" id="cfg-referrer-bonus" value="100"></div>
+        <div class="form-group"><label>Referred Bonus (₹)</label><input type="number" id="cfg-referred-bonus" value="20"></div>
+      </div>
+      <div class="form-group"><label>Referral Task Threshold</label><input type="number" id="cfg-ref-threshold" value="25"><small>Tasks needed to unlock referral bonus</small></div>
     </div>
 
-    <script>
-        function updateMobileActive(el) {
-            document.querySelectorAll('.nav-item-m').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-        }
-    </script>
+    <!-- PAYMENT CONFIG -->
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">💳 Payment Settings</h3>
+      <div class="form-group"><label>UPI / Pay ID</label><input type="text" id="cfg-upi-id" placeholder="7730846362@upi"></div>
+      <div class="form-group"><label>UPI Name</label><input type="text" id="cfg-upi-name" placeholder="Surface Hub"></div>
+      <div class="form-group"><label>Welcome Bonus (₹)</label><input type="number" id="cfg-welcome-bonus" value="20"><small>Given on first deposit approval</small></div>
+    </div>
 
-    <!-- Main Workspace -->
-    <main class="main-content">
+    <!-- WEBSITE CONFIG -->
+    <div class="glass-card">
+      <h3 style="font-size:.95rem;margin-bottom:1rem">🌐 Website & Messages</h3>
+      <div class="form-group"><label>Website URL</label><input type="text" id="cfg-website-url" value="https://chatting-app-ae637.web.app"></div>
+      <div class="form-group"><label>Maintenance Message</label><textarea id="cfg-maintenance-msg" rows="3" placeholder="🔧 Bot is under maintenance. Please try later."></textarea></div>
+      <div class="form-group"><label>Welcome Message (new users)</label><textarea id="cfg-welcome-msg" rows="3" placeholder="Welcome to Surface Hub! 🎉"></textarea></div>
+      <div class="form-group"><label>Admin Telegram IDs <small>(comma separated)</small></label><input type="text" id="cfg-admin-ids" placeholder="5936922644,123456789"></div>
+    </div>
+  </div>
+  <div style="text-align:right;margin-top:1rem">
+    <button class="btn btn-primary" onclick="AdminApp.saveSettings()"><i class="fas fa-save"></i> Save All Settings</button>
+    <button class="btn btn-ghost" style="margin-left:.5rem" onclick="AdminApp.loadSettings()"><i class="fas fa-sync"></i> Reload</button>
+  </div>
+  <div id="settings-status" style="text-align:right;margin-top:.5rem;font-size:.8rem;color:var(--success)"></div>
+</div>
 
-        <!-- DASHBOARD TAB -->
-        <div id="tab-dashboard" class="tab-content active">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h1 style="font-weight: 900; margin: 0;">System Overview</h1>
-                <div style="display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 50px; border: 1px solid var(--border);">
-                    <span class="live-pulse"></span>
-                    <span style="font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; color: #10b981;">REAL-TIME SYNC ACTIVE</span>
-                </div>
-            </div>
-            <div id="dashboard-tab-content">
-                <!-- Advanced Dashboard Injected by admin-dashboard.js -->
-                <div style="text-align: center; padding: 3rem; opacity: 0.5;">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p style="margin-top: 1rem;">Initialising Advanced Analytics...</p>
-                </div>
-            </div>
-        </div>
+</main>
 
-        <!-- POSTS TAB -->
-        <div id="tab-posts" class="tab-content">
-            <h1 style="font-weight: 900; margin-bottom: 2rem;">Post Management</h1>
-            <div class="grid" style="grid-template-columns: 1fr 1fr;">
-                <div class="glass-card">
-                    <h3>Add New Record</h3>
-                    <div style="margin-top: 1.5rem;">
-                        <label>Post Title</label>
-                        <input type="text" id="post-title" placeholder="News Headline">
+<!-- ═══ MOBILE NAV ═══ -->
+<div id="mob-nav">
+  <div class="mob-grid">
+    <button class="mob-btn active" onclick="AdminApp.setTab('dashboard',this)"><i class="fas fa-chart-line"></i>Dash</button>
+    <button class="mob-btn" onclick="AdminApp.setTab('users',this)"><i class="fas fa-users"></i>Users</button>
+    <button class="mob-btn" onclick="AdminApp.setTab('deposits',this)"><i class="fas fa-credit-card"></i>Deps</button>
+    <button class="mob-btn" onclick="AdminApp.setTab('withdrawals',this)"><i class="fas fa-money-bill-wave"></i>W/D</button>
+    <button class="mob-btn" onclick="AdminApp.setTab('watch',this)"><i class="fas fa-play-circle"></i>Watch</button>
+    <button class="mob-btn" onclick="AdminApp.setTab('settings',this)"><i class="fas fa-cog"></i>Config</button>
+  </div>
+</div>
 
-                        <label>Category</label>
-                        <select id="post-cat">
-                            <option value="Blogs">Blog Post</option>
-                            <option value="Videos">Video Link</option>
-                            <option value="Games">Hub Game</option>
-                            <option value="Records">Global Record</option>
-                        </select>
+<!-- ═══ TOAST ═══ -->
+<div id="toast"></div>
 
-                        <label>Post Summary</label>
-                        <textarea id="post-summary" placeholder="Short description for card view..."></textarea>
+<!-- ═══ USER DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="AdminApp.closeModal('user-modal')">✕</button>
+    <h3 id="modal-user-title">User Details</h3>
+    <div id="modal-user-body"></div>
+  </div>
+</div>
 
-                        <label>Video URL (Optional)</label>
-                        <input type="text" id="post-video"
-                            placeholder="https://youtube.com/watch?v=... or https://vimeo.com/...">
+<!-- ═══ WATCH POST MODAL ═══ -->
+<div class="modal-overlay" id="watch-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="AdminApp.closeModal('watch-modal')">✕</button>
+    <h3>📺 Create Watch Post</h3>
+    <div class="form-group"><label>Title</label><input type="text" id="wp-title" placeholder="Amazing Video: ..."></div>
+    <div class="form-group"><label>Description</label><textarea id="wp-desc" rows="3" placeholder="Short description of this video/post..."></textarea></div>
+    <div class="form-group"><label>Thumbnail Image URL</label><input type="url" id="wp-image" placeholder="https://..." oninput="AdminApp.previewWatchImg(this.value)"></div>
+    <img id="wp-img-preview" class="img-preview" alt="Preview">
+    <div class="form-group" style="margin-top:.5rem"><label>Video / Watch URL</label><input type="url" id="wp-video" placeholder="https://youtube.com/watch?v=..."></div>
+    <div class="form-row">
+      <div class="form-group"><label>Category</label>
+        <select id="wp-category">
+          <option value="Entertainment">🎬 Entertainment</option>
+          <option value="Education">📚 Education</option>
+          <option value="News">📰 News</option>
+          <option value="Tech">💻 Tech</option>
+          <option value="Sports">⚽ Sports</option>
+          <option value="Music">🎵 Music</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Reward (₹)</label><input type="number" id="wp-reward" value="5" min="0"></div>
+    </div>
+    <div class="toggle-row" style="margin-bottom:1rem">
+      <div><div class="toggle-label">Featured Post</div><div class="toggle-desc">Show at top of watch page</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="wp-featured"><span class="toggle-slider"></span></label>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="AdminApp.saveWatchPost()"><i class="fas fa-save"></i> Publish Watch Post</button>
+  </div>
+</div>
 
-                        <div style="margin-top: 1rem;">
-                            <label>Image Source</label>
-                            <div style="display:flex; gap: 10px; margin-top: 5px;">
-                                <button class="btn-primary" style="padding: 10px; margin: 0; font-size: 0.8rem;"
-                                    onclick="document.getElementById('post-file').click()">Upload File</button>
-                                <input type="text" id="post-url" placeholder="Or Paste URL" style="margin: 0;">
-                                <input type="file" id="post-file" style="display:none"
-                                    onchange="AdminApp.handleFile(this)">
-                            </div>
-                        </div>
-                        <img id="post-preview" class="image-preview">
+<!-- ═══ CONTENT POST MODAL ═══ -->
+<div class="modal-overlay" id="content-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="AdminApp.closeModal('content-modal')">✕</button>
+    <h3>📝 Create Hub Post</h3>
+    <div class="form-group"><label>Title</label><input type="text" id="cp-title" placeholder="Post headline..."></div>
+    <div class="form-group"><label>Summary</label><textarea id="cp-summary" rows="3" placeholder="Brief description..."></textarea></div>
+    <div class="form-group"><label>Image URL</label><input type="url" id="cp-image" placeholder="https://..."></div>
+    <div class="form-group"><label>Category</label>
+      <select id="cp-category">
+        <option value="Blogs">📝 Blog</option>
+        <option value="Videos">🎥 Video</option>
+        <option value="Games">🎮 Games</option>
+        <option value="News">📰 News</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Reward (₹)</label><input type="number" id="cp-reward" value="10" min="0"></div>
+    <button class="btn btn-primary btn-block" onclick="AdminApp.saveContent()"><i class="fas fa-save"></i> Publish Post</button>
+  </div>
+</div>
 
-                        <label style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.6;">Enable Sharing</label>
-                        <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
-                            <input type="checkbox" id="share-facebook" checked> <label for="share-facebook"
-                                style="margin: 0;">Facebook</label>
-                            <input type="checkbox" id="share-twitter" checked> <label for="share-twitter"
-                                style="margin: 0;">Twitter</label>
-                            <input type="checkbox" id="share-whatsapp" checked> <label for="share-whatsapp"
-                                style="margin: 0;">WhatsApp</label>
-                            <input type="checkbox" id="share-telegram" checked> <label for="share-telegram"
-                                style="margin: 0;">Telegram</label>
-                        </div>
-
-                        <button id="btn-publish-post" class="btn-primary" style="width:100%"
-                            onclick="AdminApp.savePost()">PUBLISH TO PORTAL</button>
-                    </div>
-                </div>
-
-                <div class="glass-card">
-                    <h3>Live Content Inventory</h3>
-                    <div id="post-list" style="margin-top: 1.5rem; max-height: 600px; overflow-y: auto;">
-                        <!-- Injected -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TASKS TAB -->
-        <div id="tab-tasks" class="tab-content">
-            <h1 style="font-weight: 900; margin-bottom: 2rem;">Shared Task Engine</h1>
-            <div class="grid" style="grid-template-columns: 1fr 1.5fr;">
-                <div class="glass-card">
-                    <h3>Add Earn Task</h3>
-                    <div style="margin-top: 1.5rem;">
-                        <label>Task Title</label>
-                        <input type="text" id="task-title" placeholder="Subscribe to YouTube">
-
-                        <label>Destination URL</label>
-                        <input type="text" id="task-url" placeholder="https://youtube.com/c/...">
-
-                        <label>Reward (₹)</label>
-                        <input type="number" id="task-reward" value="10">
-
-                        <button class="btn-primary" style="width:100%" onclick="AdminApp.saveTask()">SYNC TO BOT &
-                            WEB</button>
-                    </div>
-                </div>
-                <div class="glass-card">
-                    <h3>Global Tasks</h3>
-                    <div id="task-list" style="margin-top: 1.5rem;">
-                        <!-- Injected -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BROADCAST TAB -->
-        <div id="tab-broadcast" class="tab-content">
-            <h1 style="font-weight: 900; margin-bottom: 2rem;">Global Broadcast</h1>
-            <div class="grid" style="grid-template-columns: 1fr 1.5fr;">
-                <div class="glass-card">
-                    <h3>Queue Broadcast</h3>
-                    <div style="margin-top: 1.5rem;">
-                        <label>Notification Message</label>
-                        <textarea id="bc-msg" style="height: 150px;"
-                            placeholder="Hey users! New update is live..."></textarea>
-
-                        <label>Attachment URL (Optional)</label>
-                        <input type="text" id="bc-img" placeholder="https://link.to/image.jpg">
-
-                        <button class="btn-primary" style="width: 100%; background: #ec4899;"
-                            onclick="AdminApp.sendBroadcast()">🚀 BLAST TO ALL BOT USERS</button>
-                    </div>
-                </div>
-
-                <div class="glass-card">
-                    <h3>Active Queue Monitor</h3>
-                    <div id="bc-list" style="margin-top: 1.5rem; max-height: 400px; overflow-y: auto;">
-                        <div class="glass-card" style="background: rgba(0,0,0,0.05); text-align:center;">
-                            <p style="opacity: 0.5;">No active broadcasts in queue.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ANALYTICS / USERS TAB -->
-        <div id="tab-analytics" class="tab-content">
-            <h1 style="font-weight: 900; margin-bottom: 2rem;">Users Hub</h1>
-            <div id="users-tab-content">
-                <!-- Advanced Users Hub Injected by admin-users.js -->
-                <div style="text-align: center; padding: 3rem; opacity: 0.5;">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p style="margin-top: 1rem;">Initialising User Hub...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- PHASE 9: SPECIALISED TABS -->
-
-
-        <!-- WITHDRAWALS TAB -->
-        <div id="tab-withdrawals" class="tab-content">
-            <div id="withdrawals-tab-content">
-                <!-- Injected by admin-withdrawals.js -->
-            </div>
-        </div>
-
-        <!-- DEPOSITS TAB -->
-        <div id="tab-deposits" class="tab-content">
-            <div id="deposits-tab-content">
-                <!-- Injected by admin-deposits.js -->
-            </div>
-        </div>
-
-        <!-- REFERRALS TAB -->
-        <div id="tab-referrals" class="tab-content">
-            <div id="referrals-tab-content">
-                <!-- Injected by admin-referrals.js -->
-            </div>
-        </div>
-
-        <!-- SETTINGS TAB -->
-        <div id="tab-settings" class="tab-content">
-            <div id="settings-tab-content">
-                <!-- Injected by admin-settings.js -->
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Dependencies -->
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
-    <script type="module" src="js/admin.js?v=2.8.0"></script>
+<!-- ═══ FIREBASE ═══ -->
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
+<script type="module" src="js/admin.js?v=3.0.0"></script>
 </body>
-
 </html>

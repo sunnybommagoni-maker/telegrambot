@@ -462,3 +462,52 @@ def get_user_by_referral_code(code: str) -> int:
     """Get user_id from referral code"""
     return db.reference(f"referral_codes/{code}").get()
 
+
+# ════════════════════════════════════════════════════════════════
+#  SYSTEM CONFIG (Admin Panel → Bot real-time control)
+# ════════════════════════════════════════════════════════════════
+
+def get_system_config() -> dict:
+    """
+    Fetch live system configuration from Firebase.
+    Written by Admin Panel, read here by the bot.
+    Returns safe defaults if config not set yet.
+    """
+    config = db.reference("system_config").get() or {}
+    return {
+        "maintenance_mode":   config.get("maintenance_mode", False),
+        "earn_enabled":       config.get("earn_enabled", True),
+        "deposits_open":      config.get("deposits_open", True),
+        "withdrawals_open":   config.get("withdrawals_open", True),
+        "watch_enabled":      config.get("watch_enabled", True),
+        "deposit_amount":     config.get("deposit_amount", 50),
+        "task_reward":        config.get("task_reward", 10),
+        "min_withdraw":       config.get("min_withdraw", 500),
+        "referrer_bonus":     config.get("referrer_bonus", 100),
+        "referred_bonus":     config.get("referred_bonus", 20),
+        "referral_threshold": config.get("referral_threshold", 25),
+        "upi_id":             config.get("upi_id", "7730846362@upi"),
+        "upi_name":           config.get("upi_name", "Surface Hub"),
+        "welcome_bonus":      config.get("welcome_bonus", 20),
+        "website_url":        config.get("website_url", "https://chatting-app-ae637.web.app"),
+        "maintenance_message": config.get("maintenance_message", "🔧 Bot is under maintenance. Please try again later."),
+        "welcome_message":    config.get("welcome_message", ""),
+        "admin_ids":          [int(x) for x in config.get("admin_ids", []) if str(x).isdigit()],
+    }
+
+
+def get_broadcast_queue_pending() -> dict:
+    """Get all pending broadcast messages"""
+    all_bc = db.reference("broadcast_queue").get() or {}
+    return {k: v for k, v in all_bc.items() if v.get("status") == "pending"}
+
+
+def mark_broadcast_sent(bc_id: str):
+    """Mark a broadcast as sent"""
+    db.reference(f"broadcast_queue/{bc_id}").update({"status": "sent", "sent_at": int(time.time())})
+
+
+def mark_broadcast_failed(bc_id: str, error: str = ""):
+    """Mark a broadcast as failed"""
+    db.reference(f"broadcast_queue/{bc_id}").update({"status": "failed", "error": error, "failed_at": int(time.time())})
+

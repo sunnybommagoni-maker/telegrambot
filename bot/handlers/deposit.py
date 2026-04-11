@@ -28,36 +28,52 @@ async def start_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user_id = update.effective_user.id
     user = db.get_user(user_id)
-    
+
+    # Read live config from Firebase (admin-controlled)
+    cfg = db.get_system_config()
+    if not cfg.get('deposits_open', True):
+        await message_obj.reply_text(
+            "💳 *Deposits are currently closed.*\n"
+            "Please try again later or contact support.",
+            parse_mode="Markdown", reply_markup=main_menu_keyboard()
+        )
+        return ConversationHandler.END
+
+    deposit_amt = cfg.get('deposit_amount', DEPOSIT_AMOUNT)
+    upi_id      = cfg.get('upi_id', UPI_ID)
+    upi_name    = cfg.get('upi_name', 'Surface Hub')
+    welcome_bonus = cfg.get('welcome_bonus', 20)
+    watch_enabled = cfg.get('watch_enabled', True)
+
     # Check if already deposited
     if user and user.get("deposit_status"):
         await message_obj.reply_text(
             "✅ Your account is already *ACTIVATED*!\n"
             "Start earning now 💰",
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard()
+            reply_markup=main_menu_keyboard(watch_enabled)
         )
         return ConversationHandler.END
-    
+
     # Generate UPI QR code
     try:
-        qr_bytes = generate_upi_qr(UPI_ID, name="Surface Hub", amount=DEPOSIT_AMOUNT)
+        qr_bytes = generate_upi_qr(upi_id, name=upi_name, amount=deposit_amt)
     except Exception as e:
         logger.error(f"❌ QR generation error: {e}")
         await message_obj.reply_text(
             "❌ Error generating QR code. Please try again.",
-            reply_markup=main_menu_keyboard()
+            reply_markup=main_menu_keyboard(watch_enabled)
         )
         return ConversationHandler.END
-    
+
     # Deposit message
     deposit_msg = (
         f"💎 *ACCOUNT ACTIVATION*\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"🎁 *SPECIAL OFFER:*\n"
-        f"Deposit: **₹{DEPOSIT_AMOUNT}**\n"
-        f"Bonus: **₹20** (auto-credited!)\n"
-        f"= **₹{DEPOSIT_AMOUNT + 20}** in your account\n\n"
+        f"Deposit: **₹{deposit_amt}**\n"
+        f"Bonus: **₹{welcome_bonus}** (auto-credited!)\n"
+        f"= **₹{deposit_amt + welcome_bonus}** in your account\n\n"
         f"📱 *How to Pay:*\n"
         f"1️⃣  Scan the QR code below\n"
         f"2️⃣  Complete the payment\n"
@@ -67,14 +83,14 @@ async def start_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Payment verified within 10-30 minutes\n"
         f"Your account activates instantly ✅"
     )
-    
+
     # Send QR code
     await message_obj.reply_photo(
         photo=qr_bytes,
         caption=deposit_msg,
         parse_mode="Markdown"
     )
-    
+
     # Prompt for screenshot
     await message_obj.reply_text(
         "📸 Please send your payment screenshot here:",

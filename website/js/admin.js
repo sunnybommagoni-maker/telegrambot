@@ -1,29 +1,12 @@
 /**
- * Surface Hub Admin Console v2.8.0
- * Real-time Command & Control with Video Support & Social Sharing
- * Firebase Connected - All Features Live
+ * Surface Hub Admin Console v3.0
+ * Unified, self-contained admin engine
+ * Real-time Firebase listeners on every tab
  */
 
-// Import Phase 9 Admin Modules (Dynamic)
-let adminDashboard, adminUsers, adminWithdrawals, adminDeposits, adminReferrals, adminSettings;
-
-async function loadAdminModules() {
-    try {
-        adminDashboard = await import('./admin-dashboard.js');
-        adminUsers = await import('./admin-users.js');
-        adminWithdrawals = await import('./admin-withdrawals.js');
-        adminDeposits = await import('./admin-deposits.js');
-        adminReferrals = await import('./admin-referrals.js');
-        adminSettings = await import('./admin-settings.js');
-        console.log('✅ Phase 9 Admin Modules Loaded');
-    } catch (error) {
-        console.warn('⚠️ Phase 9 modules not fully loaded:', error);
-    }
-}
-
-// Load modules on startup
-loadAdminModules();
-
+// ══════════════════════════════════════════
+// FIREBASE INIT
+// ══════════════════════════════════════════
 const firebaseConfig = {
     projectId: "chatting-app-ae637",
     appId: "1:715270614018:web:1e41bf63bbae736efd0b1b",
@@ -34,47 +17,33 @@ const firebaseConfig = {
     messagingSenderId: "715270614018"
 };
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = window.db = firebase.database();
-const storage = window.storage = firebase.storage();
 const auth = window.auth = firebase.auth();
 window.firebase = firebase;
 
-/**
- * ADMIN APPLICATION - Main Controller
- */
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let _allUsers = {}, _allDeposits = {}, _allWithdrawals = {}, _allReferrals = {};
+let _activeListeners = []; // track all db listeners so we can detach if needed
+
+// ══════════════════════════════════════════
+// ADMIN APP
+// ══════════════════════════════════════════
 const AdminApp = {
     user: null,
-    currentFile: null,
-    statsInterval: null,
+    activeTab: 'dashboard',
 
-    // ==================== INITIALIZATION ====================
+    // ── INIT ──────────────────────────────
     init() {
-        console.log("🚀 Admin Console v2.8.0 - Initializing...");
-        this.listenToAuth();
-    },
-
-    startListeners() {
-        if (this.statsInterval) clearInterval(this.statsInterval);
-        
-        console.log("📡 Starting Real-time listeners...");
-        this.loadStats();
-        this.listenToInventory();
-        this.monitorBroadcasts();
-        console.log("✅ All systems online - Real-time listeners active");
-    },
-
-    // ==================== AUTHENTICATION ====================
-    listenToAuth() {
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(user => {
             if (user) {
                 this.user = user;
                 document.getElementById('login-overlay').style.display = 'none';
-                console.log("✅ Admin Authenticated:", user.email);
-                this.startListeners();
+                document.getElementById('admin-email-tag').textContent = user.email;
+                this.startAllListeners();
+                toast('✅ Welcome back!', 'success');
             } else {
                 this.user = null;
                 document.getElementById('login-overlay').style.display = 'flex';
@@ -82,464 +51,801 @@ const AdminApp = {
         });
     },
 
+    // ── AUTH ──────────────────────────────
     async login() {
-        const email = document.getElementById('adminEmail').value;
-        const pass = document.getElementById('adminPassword').value;
+        const email = document.getElementById('adminEmail').value.trim();
+        const pass  = document.getElementById('adminPassword').value;
         const errEl = document.getElementById('loginError');
-
-        if (!email || !pass) {
-            errEl.innerText = "❌ Email and password required";
-            errEl.style.display = 'block';
-            return;
-        }
-
+        errEl.style.display = 'none';
+        if (!email || !pass) { errEl.textContent = '❌ Email and password required'; errEl.style.display = 'block'; return; }
         try {
-            const result = await auth.signInWithEmailAndPassword(email, pass);
-            errEl.style.display = 'none';
-            console.log("🔐 Login Successful:", result.user.email);
-        } catch (error) {
-            console.error("Login Error:", error.code);
-            let msg = "Unknown error";
-            if (error.code === 'auth/user-not-found') msg = "User not found";
-            if (error.code === 'auth/wrong-password') msg = "Invalid credentials";
-            if (error.code === 'auth/invalid-email') msg = "Invalid email format";
-
-            errEl.innerText = "❌ " + msg;
+            await auth.signInWithEmailAndPassword(email, pass);
+        } catch (e) {
+            errEl.textContent = '❌ ' + (e.code === 'auth/wrong-password' ? 'Invalid credentials' : e.code === 'auth/user-not-found' ? 'User not found' : e.message);
             errEl.style.display = 'block';
         }
     },
 
-    logout() {
-        auth.signOut().then(() => {
-            window.location.reload();
-        });
-    },
+    logout() { auth.signOut(); },
 
-    // ==================== TAB NAVIGATION ====================
+    // ── TAB NAVIGATION ────────────────────
     setTab(tabId, el) {
-        // Remove active from all tabs and nav items
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-        // Add active to selected
-        const tab = document.getElementById(`tab-${tabId}`);
-        if (tab) {
-            tab.classList.add('active');
-            if (el && el.classList) el.classList.add('active');
-            
-            // Initialize Phase 9 tabs when clicked
-            switch(tabId) {
-                case 'dashboard':
-                    if (adminDashboard?.initDashboardTab) {
-                        adminDashboard.initDashboardTab();
-                    }
-                    break;
-                case 'analytics':
-                    if (adminUsers?.initUsersTab) {
-                        adminUsers.initUsersTab();
-                    }
-                    break;
-                case 'withdrawals':
-                    if (adminWithdrawals?.initWithdrawalsTab) {
-                        adminWithdrawals.initWithdrawalsTab();
-                    }
-                    break;
-                case 'deposits':
-                    if (adminDeposits?.initDepositsTab) {
-                        adminDeposits.initDepositsTab();
-                    }
-                    break;
-                case 'referrals':
-                    if (adminReferrals?.initReferralsTab) {
-                        adminReferrals.initReferralsTab();
-                    }
-                    break;
-                case 'settings':
-                    if (adminSettings?.initSettingsTab) {
-                        adminSettings.initSettingsTab();
-                    }
-                    break;
-            }
-        }
+        document.querySelectorAll('.nav-item, .mob-btn').forEach(n => n.classList.remove('active'));
+        const tab = document.getElementById('tab-' + tabId);
+        if (tab) { tab.classList.add('active'); this.activeTab = tabId; }
+        if (el && el.classList) el.classList.add('active');
+        // sync sidebar + mob nav
+        document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(n => n.classList.add('active'));
+        // Lazy load analytics
+        if (tabId === 'analytics') this.renderAnalytics();
     },
 
-    // ==================== DASHBOARD STATS (REAL-TIME) ====================
-    loadStats() {
-        // User Count & Total Balance
+    // ── MODAL ─────────────────────────────
+    openModal(id) { document.getElementById(id).classList.add('open'); },
+    closeModal(id) { document.getElementById(id).classList.remove('open'); },
+    openWatchModal() { this._wpEditId = null; this.openModal('watch-modal'); },
+    openContentModal() { this._cpEditId = null; this.openModal('content-modal'); },
+
+    // ── REALTIME LISTENERS ─────────────────
+    startAllListeners() {
+        this.listenUsers();
+        this.listenDeposits();
+        this.listenWithdrawals();
+        this.listenReferrals();
+        this.listenTasks();
+        this.listenContent();
+        this.listenWatchPosts();
+        this.listenBroadcasts();
+        this.loadSettings();
+    },
+
+    // ─────────────────────────────────────────
+    // USERS
+    // ─────────────────────────────────────────
+    listenUsers() {
         db.ref('users').on('value', snap => {
-            const usersEl = document.getElementById('stat-users');
-            if (usersEl) {
-                usersEl.innerText = snap.numChildren().toLocaleString();
-            }
-
-            let totalBalance = 0;
-            snap.forEach(user => {
-                totalBalance += (user.val().balance || 0);
+            _allUsers = {};
+            let totalEarnings = 0, totalTasks = 0, activeCount = 0;
+            snap.forEach(child => {
+                const u = child.val();
+                if (!u) return;
+                _allUsers[child.key] = { ...u, _id: child.key };
+                if (u.deposit_status) activeCount++;
+                totalEarnings += (u.balance || 0);
+                totalTasks += (u.earnings?.tasks_completed || 0);
             });
-
-            const rewardsEl = document.getElementById('stat-rewards');
-            if (rewardsEl) {
-                rewardsEl.innerText = `₹${totalBalance.toLocaleString()}`;
-            }
+            const count = Object.keys(_allUsers).length;
+            // KPIs
+            setText('kpi-users', count);
+            setText('kpi-active-users', `Active: ${activeCount}`);
+            setText('kpi-earnings', '₹' + totalEarnings.toFixed(0));
+            setText('kpi-distributed', `Dist: ₹${(totalEarnings * 0.85).toFixed(0)}`);
+            setText('kpi-tasks', totalTasks);
+            setText('kpi-avg-tasks', `Avg: ${count > 0 ? (totalTasks/count).toFixed(1) : 0}`);
+            setText('user-count-label', `${count} users total`);
+            // badge
+            const newUsers = Object.values(_allUsers).filter(u => !u.deposit_status).length;
+            setBadge('badge-users', newUsers);
+            this.renderUsersTable();
+            this.pushActivity(`👥 Users updated: ${count} total, ${activeCount} active`, '#3b82f6');
         });
-
-        // Additional stats can be added here
     },
 
-    // ==================== POST MANAGEMENT WITH VIDEO & SHARING ====================
-    handleFile(input) {
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
+    renderUsersTable() {
+        const search = (document.getElementById('user-search')?.value || '').toLowerCase();
+        const statusF = document.getElementById('user-status-filter')?.value || '';
+        const sortF   = document.getElementById('user-sort')?.value || 'newest';
+        let users = Object.values(_allUsers);
+        // filter
+        if (search) users = users.filter(u =>
+            String(u._id).includes(search) ||
+            (u.username || '').toLowerCase().includes(search) ||
+            (u.first_name || '').toLowerCase().includes(search)
+        );
+        if (statusF === 'active')   users = users.filter(u => u.deposit_status && !u.banned);
+        if (statusF === 'inactive') users = users.filter(u => !u.deposit_status);
+        if (statusF === 'banned')   users = users.filter(u => u.banned);
+        // sort
+        if (sortF === 'balance') users.sort((a,b) => (b.balance||0) - (a.balance||0));
+        else if (sortF === 'tasks') users.sort((a,b) => (b.earnings?.tasks_completed||0) - (a.earnings?.tasks_completed||0));
+        else users.sort((a,b) => (b.joined_at||0) - (a.joined_at||0));
 
-            // Validate file type
-            if (!file.type.match('image.*')) {
-                alert("❌ Please select an image file");
-                return;
-            }
-
-            this.currentFile = file;
-            const reader = new FileReader();
-            reader.onload = e => {
-                const preview = document.getElementById('post-preview');
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    },
-
-    async savePost() {
-        // Get form values
-        const title = document.getElementById('post-title').value?.trim();
-        const category = document.getElementById('post-cat').value;
-        const summary = document.getElementById('post-summary').value?.trim();
-        const videoUrl = document.getElementById('post-video').value?.trim();
-        const imageUrl = document.getElementById('post-url').value?.trim();
-
-        // Validation
-        if (!title || !summary) {
-            alert("❌ Fill required fields: Title and Summary");
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) return;
+        if (users.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-users-slash"></i><p>No users found</p></div></td></tr>`;
             return;
         }
+        tbody.innerHTML = users.map(u => {
+            const name = u.username || u.first_name || 'Unknown';
+            const initial = name.charAt(0).toUpperCase();
+            const status = u.banned ? `<span class="chip chip-banned">Banned</span>` :
+                           u.deposit_status ? `<span class="chip chip-active">Active</span>` :
+                           `<span class="chip chip-pending">Inactive</span>`;
+            return `<tr>
+              <td><div style="display:flex;align-items:center;gap:10px">
+                <div class="user-avatar">${initial}</div>
+                <div><div style="font-weight:600">${escHtml(name)}</div><div style="font-size:.7rem;color:var(--muted)">${u._id}</div></div>
+              </div></td>
+              <td><strong>₹${(u.balance||0).toFixed(2)}</strong></td>
+              <td>${u.earnings?.tasks_completed||0}</td>
+              <td>${status}</td>
+              <td style="font-size:.73rem;color:var(--muted)">${u.last_active ? new Date(u.last_active).toLocaleDateString('en-IN') : 'N/A'}</td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-info btn-sm" onclick="AdminApp.viewUser('${u._id}')"><i class="fas fa-eye"></i></button>
+                <button class="btn ${u.banned ? 'btn-success' : 'btn-warn'} btn-sm" onclick="AdminApp.toggleBan('${u._id}',${!!u.banned})">
+                  ${u.banned ? '✓ Unban' : '🚫 Ban'}
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="AdminApp.adjustBalance('${u._id}')">₹ Adjust</button>
+              </td>
+            </tr>`;
+        }).join('');
+    },
 
-        const btn = document.getElementById('btn-publish-post');
-        let finalImage = imageUrl;
+    viewUser(uid) {
+        const u = _allUsers[uid];
+        if (!u) return;
+        const name = u.username || u.first_name || uid;
+        document.getElementById('modal-user-title').textContent = `👤 ${name}`;
+        document.getElementById('modal-user-body').innerHTML = `
+          <div class="kpi-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:1rem">
+            <div class="kpi"><div class="kpi-value">₹${(u.balance||0).toFixed(2)}</div><div class="kpi-label">Balance</div></div>
+            <div class="kpi"><div class="kpi-value">${u.earnings?.tasks_completed||0}</div><div class="kpi-label">Tasks</div></div>
+            <div class="kpi"><div class="kpi-value">${u.referrals?.referred_count||0}</div><div class="kpi-label">Referrals</div></div>
+          </div>
+          <table style="width:100%;font-size:.8rem;border-collapse:collapse">
+            ${[
+              ['User ID', uid],
+              ['Username', u.username || 'N/A'],
+              ['First Name', u.first_name || 'N/A'],
+              ['Deposit Status', u.deposit_status ? '✅ Activated' : '❌ Not Activated'],
+              ['Banned', u.banned ? '🚫 Yes' : '✓ No'],
+              ['Joined', u.joined_at ? new Date(u.joined_at*1000).toLocaleString('en-IN') : 'N/A'],
+              ['Referral Code', u.referrals?.referral_code || 'N/A'],
+              ['Referred By', u.referrals?.referred_by || 'None'],
+              ['Total Earned', '₹' + (u.earnings?.total_earned || u.balance || 0)],
+              ['Withdrawn', '₹' + (u.earnings?.total_withdrawn || 0)],
+            ].map(([k,v]) => `<tr style="border-bottom:1px solid var(--border)"><td style="padding:.5rem;color:var(--muted)">${k}</td><td style="padding:.5rem;font-weight:600">${v}</td></tr>`).join('')}
+          </table>
+          <div style="display:flex;gap:.7rem;margin-top:1rem;flex-wrap:wrap">
+            <button class="btn btn-warn btn-sm" onclick="AdminApp.adjustBalance('${uid}')"><i class="fas fa-coins"></i> Adjust Balance</button>
+            <button class="btn ${u.banned?'btn-success':'btn-danger'} btn-sm" onclick="AdminApp.toggleBan('${uid}',${!!u.banned});AdminApp.closeModal('user-modal')">
+              ${u.banned ? '✓ Unban User' : '🚫 Ban User'}
+            </button>
+          </div>`;
+        this.openModal('user-modal');
+    },
 
+    async toggleBan(uid, isBanned) {
+        const action = isBanned ? 'Unban' : 'Ban';
+        if (!confirm(`${action} user ${uid}?`)) return;
         try {
-            // Upload file if provided
-            if (this.currentFile) {
-                btn.innerText = "📤 UPLOADING IMAGE...";
-                btn.disabled = true;
+            await db.ref(`users/${uid}/banned`).set(!isBanned);
+            toast(`${isBanned ? '✅ User unbanned' : '🚫 User banned'}`, isBanned ? 'success' : 'error');
+            this.pushActivity(`${isBanned ? '✅ Unban' : '🚫 Ban'} action on user ${uid}`, isBanned ? '#10b981' : '#ef4444');
+        } catch (e) { toast('❌ Error: ' + e.message, 'error'); }
+    },
 
-                const timestamp = Date.now();
-                const ref = storage.ref(`posts/${timestamp}_${this.currentFile.name}`);
-                const uploadTask = ref.put(this.currentFile);
+    async adjustBalance(uid) {
+        const u = _allUsers[uid];
+        if (!u) return;
+        const current = u.balance || 0;
+        const input = prompt(`Adjust balance for user ${u.username || uid}\nCurrent: ₹${current}\n\nEnter new balance:`);
+        if (input === null) return;
+        const newBal = parseFloat(input);
+        if (isNaN(newBal) || newBal < 0) { toast('❌ Invalid amount', 'error'); return; }
+        try {
+            await db.ref(`users/${uid}/balance`).set(newBal);
+            await db.ref('admin_logs/balance_adjustments').push({
+                user_id: uid, old_balance: current, new_balance: newBal,
+                adjusted_by: this.user?.email, timestamp: Date.now()
+            });
+            toast(`✅ Balance updated to ₹${newBal}`, 'success');
+            this.pushActivity(`💰 Balance adjusted for ${uid}: ₹${current} → ₹${newBal}`, '#6366f1');
+        } catch (e) { toast('❌ ' + e.message, 'error'); }
+    },
 
-                await new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            btn.innerText = `📤 UPLOADING ${Math.round(progress)}%`;
-                        },
-                        reject,
-                        resolve
-                    );
-                });
+    // ─────────────────────────────────────────
+    // DEPOSITS
+    // ─────────────────────────────────────────
+    listenDeposits() {
+        db.ref('deposits').on('value', snap => {
+            _allDeposits = {};
+            snap.forEach(child => { _allDeposits[child.key] = { ...child.val(), _id: child.key }; });
+            const pending = Object.values(_allDeposits).filter(d => (d.status || 'pending') === 'pending');
+            const approved = Object.values(_allDeposits).filter(d => d.status === 'approved');
+            setText('kpi-dep-pending', pending.length);
+            setText('kpi-dep-approved', `Approved: ${approved.length}`);
+            setBadge('badge-deposits', pending.length);
+            setText('dep-pending-count', `${pending.length} Pending`);
+            setText('dep-approved-count', `${approved.length} Approved`);
+            this.renderDeposits();
+        });
+    },
 
-                finalImage = await ref.getDownloadURL();
-            }
+    filterDeposits() { this.renderDeposits(); },
+    renderDeposits() {
+        const filter = document.getElementById('dep-filter')?.value || '';
+        let deposits = Object.values(_allDeposits);
+        if (filter) deposits = deposits.filter(d => (d.status || 'pending') === filter);
+        deposits.sort((a,b) => (b.created_at||0) - (a.created_at||0));
+        const el = document.getElementById('deposits-list');
+        if (!el) return;
+        if (deposits.length === 0) { el.innerHTML = `<div class="empty-state"><i class="fas fa-credit-card"></i><p>No deposits ${filter || ''}</p></div>`; return; }
+        el.innerHTML = deposits.map(d => {
+            const status = d.status || 'pending';
+            const u = _allUsers[d.user_id] || {};
+            const name = d.username || u.username || d.user_id;
+            const time = d.created_at ? new Date(d.created_at * 1000).toLocaleString('en-IN') : 'N/A';
+            return `<div class="glass-card" style="margin-bottom:1rem;display:flex;gap:1.2rem;flex-wrap:wrap;align-items:flex-start">
+              ${d.screenshot_id ? `<img class="screenshot-thumb" src="https://api.telegram.org/file/bot..." alt="Screenshot" title="Screenshot">` : '<div style="width:60px;height:60px;border-radius:8px;background:var(--card);display:flex;align-items:center;justify-content:center;color:var(--muted)"><i class="fas fa-image"></i></div>'}
+              <div style="flex:1;min-width:200px">
+                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+                  <strong>${escHtml(String(name))}</strong>
+                  <span class="chip chip-${status}">${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}</span>
+                </div>
+                <div style="font-size:.78rem;color:var(--muted)">ID: ${d.user_id} | ₹${d.amount || 50} | ${time}</div>
+                ${d.admin_note ? `<div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Note: ${d.admin_note}</div>` : ''}
+              </div>
+              ${status === 'pending' ? `<div style="display:flex;gap:.5rem">
+                <button class="btn btn-success btn-sm" onclick="AdminApp.approveDeposit('${d.user_id}')"><i class="fas fa-check"></i> Approve</button>
+                <button class="btn btn-danger btn-sm" onclick="AdminApp.rejectDeposit('${d.user_id}')"><i class="fas fa-times"></i> Reject</button>
+              </div>` : ''}
+            </div>`;
+        }).join('');
+    },
 
-            if (!finalImage) {
-                alert("❌ Provide image URL or upload file");
-                btn.disabled = false;
-                btn.innerText = "PUBLISH TO PORTAL";
+    async approveDeposit(userId) {
+        if (!confirm(`Approve deposit for user ${userId}?`)) return;
+        const user = _allUsers[userId] || {};
+        try {
+            const cfg = await this._getConfig();
+            const bonus = cfg.welcome_bonus || 20;
+            const depositAmt = cfg.deposit_amount || 50;
+            const newBal = (user.balance || 0) + depositAmt + bonus;
+            const updates = {};
+            updates[`deposits/${userId}/status`] = 'approved';
+            updates[`deposits/${userId}/approved_at`] = Date.now() / 1000 | 0;
+            updates[`deposits/${userId}/admin_note`] = `Approved by ${this.user?.email}`;
+            updates[`users/${userId}/deposit_status`] = true;
+            updates[`users/${userId}/balance`] = newBal;
+            updates[`admin_logs/deposit_approvals/${Date.now()}`] = { user_id: userId, amount: depositAmt, bonus, final_balance: newBal, by: this.user?.email, ts: Date.now() };
+            await db.ref().update(updates);
+            toast('✅ Deposit approved! User notified via bot.', 'success');
+            this.pushActivity(`✅ Deposit approved for ${user.username || userId} — Balance: ₹${newBal}`, '#10b981');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    async rejectDeposit(userId) {
+        const reason = prompt('Rejection reason (optional):') ?? '';
+        try {
+            await db.ref(`deposits/${userId}`).update({
+                status: 'rejected',
+                rejected_at: Date.now() / 1000 | 0,
+                admin_note: reason || `Rejected by ${this.user?.email}`
+            });
+            toast('❌ Deposit rejected. User will be notified.', 'error');
+            this.pushActivity(`❌ Deposit rejected for user ${userId}`, '#ef4444');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    // ─────────────────────────────────────────
+    // WITHDRAWALS
+    // ─────────────────────────────────────────
+    listenWithdrawals() {
+        db.ref('withdrawal_requests').on('value', snap => {
+            _allWithdrawals = {};
+            snap.forEach(child => { _allWithdrawals[child.key] = { ...child.val(), _id: child.key }; });
+            const pending = Object.values(_allWithdrawals).filter(w => w.status === 'pending');
+            const totalAmt = pending.reduce((s,w) => s + (w.amount||0), 0);
+            setText('kpi-with-pending', pending.length);
+            setText('kpi-with-amount', `₹${totalAmt.toFixed(0)}`);
+            setBadge('badge-withdrawals', pending.length);
+            setText('with-pending-count', `${pending.length} Pending`);
+            setText('with-total-amount', `₹${totalAmt.toFixed(0)} Due`);
+            this.renderWithdrawals();
+        });
+    },
+
+    filterWithdrawals() { this.renderWithdrawals(); },
+    renderWithdrawals() {
+        const filter = document.getElementById('with-filter')?.value || '';
+        let withdrawals = Object.values(_allWithdrawals);
+        if (filter) withdrawals = withdrawals.filter(w => w.status === filter);
+        withdrawals.sort((a,b) => (b.created_at||0) - (a.created_at||0));
+        const el = document.getElementById('withdrawals-list');
+        if (!el) return;
+        if (withdrawals.length === 0) { el.innerHTML = `<div class="empty-state"><i class="fas fa-money-bill-wave"></i><p>No withdrawals ${filter || ''}</p></div>`; return; }
+        el.innerHTML = withdrawals.map(w => {
+            const status = w.status || 'pending';
+            const user = _allUsers[w.user_id] || {};
+            const name = user.username || w.user_id;
+            const time = w.created_at ? new Date(w.created_at).toLocaleString('en-IN') : 'N/A';
+            return `<div class="glass-card" style="margin-bottom:1rem">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+                <div>
+                  <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+                    <strong>${escHtml(String(name))}</strong>
+                    <span class="chip chip-${status === 'pending' ? 'pending' : status === 'approved' ? 'approved' : 'rejected'}">${status}</span>
+                  </div>
+                  <div style="font-size:.8rem"><strong>₹${w.amount}</strong> → ${escHtml(w.upi || 'N/A')}</div>
+                  <div style="font-size:.72rem;color:var(--muted)">ID: ${w.user_id} | ${time}</div>
+                </div>
+                ${status === 'pending' ? `<div style="display:flex;gap:.5rem">
+                  <button class="btn btn-success btn-sm" onclick="AdminApp.approveWithdrawal('${w._id}','${w.user_id}')"><i class="fas fa-check"></i> Approve</button>
+                  <button class="btn btn-danger btn-sm" onclick="AdminApp.rejectWithdrawal('${w._id}','${w.user_id}',${w.amount})"><i class="fas fa-times"></i> Reject</button>
+                </div>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+    },
+
+    async approveWithdrawal(requestId, userId) {
+        if (!confirm(`Approve withdrawal for user ${userId}?`)) return;
+        try {
+            await db.ref(`withdrawal_requests/${requestId}`).update({
+                status: 'approved', approved_at: Date.now(), approved_by: this.user?.email
+            });
+            toast('✅ Withdrawal approved! Bot will notify user.', 'success');
+            this.pushActivity(`✅ Withdrawal approved: ${requestId}`, '#10b981');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    async rejectWithdrawal(requestId, userId, amount) {
+        const reason = prompt('Rejection reason:') ?? '';
+        if (reason === null) return;
+        try {
+            // refund balance
+            const user = _allUsers[userId] || {};
+            const newBal = (user.balance || 0) + (amount || 0);
+            const updates = {};
+            updates[`withdrawal_requests/${requestId}/status`] = 'rejected';
+            updates[`withdrawal_requests/${requestId}/rejected_at`] = Date.now();
+            updates[`withdrawal_requests/${requestId}/note`] = reason;
+            updates[`users/${userId}/balance`] = newBal;
+            await db.ref().update(updates);
+            toast(`❌ Withdrawal rejected. ₹${amount} refunded to user.`, 'error');
+            this.pushActivity(`❌ Withdrawal rejected: ${requestId}, ₹${amount} refunded`, '#ef4444');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    // ─────────────────────────────────────────
+    // REFERRALS
+    // ─────────────────────────────────────────
+    listenReferrals() {
+        db.ref('users').on('value', snap => {
+            let referrers = [], totalReferrals = 0, bonusCount = 0;
+            snap.forEach(child => {
+                const u = child.val();
+                if (u?.referrals?.referred_count > 0) {
+                    referrers.push({ id: child.key, ...u });
+                    totalReferrals += u.referrals.referred_count;
+                    if (u.referrals.bonus_awarded) bonusCount++;
+                }
+            });
+            setText('kpi-referrals', totalReferrals);
+            setText('kpi-ref-bonus', `Bonus: ${bonusCount}`);
+            setText('ref-kpi-referrers', referrers.length);
+            setText('ref-kpi-total', totalReferrals);
+            setText('ref-kpi-bonus', bonusCount);
+            referrers.sort((a,b) => (b.referrals?.referred_count||0) - (a.referrals?.referred_count||0));
+            const tbody = document.getElementById('referrals-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = referrers.map((u,i) => {
+                const name = u.username || u.first_name || u.id;
+                return `<tr>
+                  <td style="font-weight:900;${i<3?`color:${['#f59e0b','#9ca3af','#b45309'][i]}`:''}"> ${['🥇','🥈','🥉'][i] || (i+1)}</td>
+                  <td>${escHtml(String(name))}</td>
+                  <td><code style="font-size:.75rem;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:6px">${u.referrals?.referral_code || 'N/A'}</code></td>
+                  <td><strong>${u.referrals?.referred_count || 0}</strong></td>
+                  <td>${u.referrals?.bonus_awarded ? '<span class="chip chip-approved">Awarded</span>' : '<span class="chip chip-pending">Pending</span>'}</td>
+                  <td><button class="btn btn-success btn-sm" onclick="AdminApp.awardReferralBonus('${u.id}')"><i class="fas fa-gift"></i> Award Bonus</button></td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-share-nodes"></i><p>No referrers yet</p></div></td></tr>`;
+        });
+    },
+
+    async awardReferralBonus(userId) {
+        const u = _allUsers[userId] || {};
+        const cfg = await this._getConfig();
+        const bonus = cfg.referrer_bonus || 100;
+        if (!confirm(`Award ₹${bonus} referral bonus to ${u.username || userId}?`)) return;
+        try {
+            const newBal = (u.balance || 0) + bonus;
+            await db.ref().update({
+                [`users/${userId}/balance`]: newBal,
+                [`users/${userId}/referrals/bonus_awarded`]: true
+            });
+            toast(`✅ ₹${bonus} bonus awarded!`, 'success');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    // ─────────────────────────────────────────
+    // WATCH POSTS
+    // ─────────────────────────────────────────
+    listenWatchPosts() {
+        db.ref('watch_posts').on('value', snap => {
+            const posts = [];
+            snap.forEach(child => posts.push({ ...child.val(), _id: child.key }));
+            posts.sort((a,b) => (b.featured?1:0) - (a.featured?1:0) || (b.timestamp||0) - (a.timestamp||0));
+            const grid = document.getElementById('watch-posts-grid');
+            if (!grid) return;
+            if (posts.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-play-circle"></i><p>No watch posts yet.</p></div>`;
                 return;
             }
-
-            btn.innerText = "🔄 PUBLISHING...";
-
-            // Collect share preferences
-            const shareOptions = {
-                facebook: document.getElementById('share-facebook').checked,
-                twitter: document.getElementById('share-twitter').checked,
-                whatsapp: document.getElementById('share-whatsapp').checked,
-                telegram: document.getElementById('share-telegram').checked
-            };
-
-            // Create post object with video support
-            const postData = {
-                title,
-                category,
-                summary,
-                image: finalImage,
-                videoUrl: videoUrl || null,
-                thumbnail: finalImage,
-                timestamp: Date.now(),
-                author: "Admin",
-                type: category,
-                content: summary,
-                description: summary,
-                reward: 10,
-                enabled: true,
-                shareOptions
-            };
-
-            // Save to Firebase
-            const newPostRef = db.ref('content').push();
-            await newPostRef.set(postData);
-
-            btn.innerText = "✅ PUBLISHED!";
-            setTimeout(() => {
-                btn.innerText = "PUBLISH TO PORTAL";
-                btn.disabled = false;
-            }, 1500);
-
-            console.log("✅ Post published with video and share options:", newPostRef.key);
-            this.resetPostForm();
-            alert("🚀 POST PUBLISHED TO PORTAL HUB (Video & Share Options Active)");
-
-        } catch (error) {
-            console.error("Error saving post:", error);
-            alert("❌ Error: " + error.message);
-            btn.innerText = "PUBLISH TO PORTAL";
-            btn.disabled = false;
-        }
+            grid.innerHTML = posts.map(p => `
+              <div class="content-card">
+                ${p.image ? `<img src="${escHtml(p.image)}" alt="thumb" onerror="this.style.display='none'">` : `<div style="height:160px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:3rem">📺</div>`}
+                <div class="content-card-body">
+                  ${p.featured ? `<span class="chip chip-approved" style="margin-bottom:.4rem">⭐ Featured</span>` : ''}
+                  <div style="font-size:.65rem;color:var(--p);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:.2rem">${p.category || 'General'}</div>
+                  <h4>${escHtml(p.title || 'Untitled')}</h4>
+                  <p style="margin-top:.3rem">${escHtml((p.description || '').substring(0,80))}${(p.description||'').length>80?'...':''}</p>
+                  ${p.reward ? `<div style="font-size:.75rem;color:#10b981;margin-top:.4rem;font-weight:700">💰 ₹${p.reward} reward</div>` : ''}
+                </div>
+                <div class="content-card-actions">
+                  ${p.video_url ? `<a href="${escHtml(p.video_url)}" target="_blank" class="btn btn-info btn-sm"><i class="fas fa-play"></i> Watch</a>` : ''}
+                  <button class="btn btn-danger btn-sm" onclick="AdminApp.deleteWatchPost('${p._id}')"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>`).join('');
+        });
     },
 
-    resetPostForm() {
-        document.getElementById('post-title').value = '';
-        document.getElementById('post-cat').value = 'Blogs';
-        document.getElementById('post-summary').value = '';
-        document.getElementById('post-url').value = '';
-        document.getElementById('post-video').value = '';
-        document.getElementById('post-preview').style.display = 'none';
-        this.currentFile = null;
-
-        // Reset share checkboxes to all enabled
-        document.getElementById('share-facebook').checked = true;
-        document.getElementById('share-twitter').checked = true;
-        document.getElementById('share-whatsapp').checked = true;
-        document.getElementById('share-telegram').checked = true;
+    previewWatchImg(url) {
+        const prev = document.getElementById('wp-img-preview');
+        if (!prev) return;
+        if (url) { prev.src = url; prev.style.display = 'block'; }
+        else { prev.style.display = 'none'; }
     },
 
-    // ==================== TASK MANAGEMENT ====================
-    saveTask() {
-        const title = document.getElementById('task-title').value?.trim();
-        const url = document.getElementById('task-url').value?.trim();
-        const reward = parseInt(document.getElementById('task-reward').value) || 5;
+    async saveWatchPost() {
+        const title = document.getElementById('wp-title')?.value.trim();
+        const desc  = document.getElementById('wp-desc')?.value.trim();
+        const image = document.getElementById('wp-image')?.value.trim();
+        const video = document.getElementById('wp-video')?.value.trim();
+        const cat   = document.getElementById('wp-category')?.value;
+        const reward = parseInt(document.getElementById('wp-reward')?.value) || 0;
+        const featured = document.getElementById('wp-featured')?.checked;
+        if (!title || !video) { toast('❌ Title and Video URL are required', 'error'); return; }
+        const post = { title, description: desc, image, video_url: video, category: cat, reward, featured, timestamp: Date.now(), enabled: true };
+        try {
+            await db.ref('watch_posts').push(post);
+            toast('✅ Watch post published!', 'success');
+            this.closeModal('watch-modal');
+            // clear
+            ['wp-title','wp-desc','wp-image','wp-video'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+            document.getElementById('wp-img-preview').style.display = 'none';
+            this.pushActivity(`📺 New watch post: "${title}"`, '#6366f1');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
 
-        if (!title || !url) {
-            alert("❌ Fill task title and URL");
-            return;
-        }
+    async deleteWatchPost(postId) {
+        if (!confirm('Delete this watch post?')) return;
+        await db.ref(`watch_posts/${postId}`).remove();
+        toast('🗑️ Watch post deleted', 'error');
+    },
 
-        const taskData = {
-            title,
-            url,
-            reward,
-            type: "external_link",
-            addedAt: Date.now(),
-            enabled: true,
-            completions: 0
-        };
+    // ─────────────────────────────────────────
+    // HUB CONTENT
+    // ─────────────────────────────────────────
+    listenContent() {
+        db.ref('content').on('value', snap => {
+            const posts = [];
+            snap.forEach(child => posts.push({ ...child.val(), _id: child.key }));
+            posts.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+            const grid = document.getElementById('content-grid');
+            if (!grid) return;
+            if (posts.length === 0) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-newspaper"></i><p>No hub posts yet.</p></div>`; return; }
+            grid.innerHTML = posts.map(p => `
+              <div class="content-card">
+                ${p.image ? `<img src="${escHtml(p.image)}" alt="thumb" onerror="this.style.display='none'">` : `<div style="height:160px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:3rem">📝</div>`}
+                <div class="content-card-body">
+                  <div style="font-size:.65rem;color:var(--p);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:.2rem">${p.category||'Blogs'}</div>
+                  <h4>${escHtml(p.title||'Untitled')}</h4>
+                  <p>${escHtml((p.summary||'').substring(0,80))}${(p.summary||'').length>80?'...':''}</p>
+                </div>
+                <div class="content-card-actions">
+                  <button class="btn btn-danger btn-sm" onclick="AdminApp.deleteContent('${p._id}')"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+              </div>`).join('');
+        });
+    },
 
-        db.ref('tasks').push(taskData).then(ref => {
-            console.log("✅ Task created:", ref.key);
-            alert(`✅ TASK SYNCED TO BOT & WEB (ID: ${ref.key})`);
+    async saveContent() {
+        const title   = document.getElementById('cp-title')?.value.trim();
+        const summary = document.getElementById('cp-summary')?.value.trim();
+        const image   = document.getElementById('cp-image')?.value.trim();
+        const cat     = document.getElementById('cp-category')?.value;
+        const reward  = parseInt(document.getElementById('cp-reward')?.value) || 10;
+        if (!title || !summary) { toast('❌ Title and summary required', 'error'); return; }
+        try {
+            await db.ref('content').push({ title, summary, image, category: cat, reward, timestamp: Date.now(), enabled: true });
+            toast('✅ Post published!', 'success');
+            this.closeModal('content-modal');
+            this.pushActivity(`📝 New hub post: "${title}"`, '#3b82f6');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    async deleteContent(postId) {
+        if (!confirm('Delete this post?')) return;
+        await db.ref(`content/${postId}`).remove();
+        toast('🗑️ Post deleted', 'error');
+    },
+
+    // ─────────────────────────────────────────
+    // TASKS
+    // ─────────────────────────────────────────
+    listenTasks() {
+        db.ref('tasks').on('value', snap => {
+            const tasks = [];
+            snap.forEach(child => tasks.push({ ...child.val(), _id: child.key }));
+            tasks.sort((a,b) => (b.addedAt||0) - (a.addedAt||0));
+            setText('task-total-count', tasks.length);
+            const list = document.getElementById('task-list');
+            if (!list) return;
+            if (tasks.length === 0) { list.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>No tasks yet</p></div>`; return; }
+            list.innerHTML = tasks.map(t => `
+              <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:.9rem;border:1px solid var(--border);margin-bottom:.6rem;display:flex;justify-content:space-between;align-items:center;gap:.8rem">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(t.title||'Untitled')}</div>
+                  <div style="font-size:.72rem;color:var(--muted);margin-top:2px">💰 ₹${t.reward || 0} · ${t.category || 'general'} · ${t.completions||0} done</div>
+                </div>
+                <div style="display:flex;gap:.4rem;flex-shrink:0">
+                  <button class="btn btn-warn btn-sm" onclick="AdminApp.toggleTask('${t._id}',${!!t.enabled})">${t.enabled!==false?'⏸ Pause':'▶ Enable'}</button>
+                  <button class="btn btn-danger btn-sm" onclick="AdminApp.deleteTask('${t._id}')"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>`).join('');
+        });
+    },
+
+    async saveTask() {
+        const title  = document.getElementById('task-title')?.value.trim();
+        const url    = document.getElementById('task-url')?.value.trim();
+        const reward = parseInt(document.getElementById('task-reward-amt')?.value) || 10;
+        const cat    = document.getElementById('task-category')?.value;
+        if (!title || !url) { toast('❌ Title and URL required', 'error'); return; }
+        try {
+            await db.ref('tasks').push({ title, url, reward, category: cat, enabled: true, completions: 0, addedAt: Date.now() });
+            toast('✅ Task synced to bot & website!', 'success');
             document.getElementById('task-title').value = '';
             document.getElementById('task-url').value = '';
-            document.getElementById('task-reward').value = '10';
-        }).catch(err => {
-            alert("❌ Error: " + err.message);
+            this.pushActivity(`🎯 New task: "${title}" (₹${reward})`, '#f59e0b');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
+    },
+
+    async toggleTask(taskId, isEnabled) {
+        await db.ref(`tasks/${taskId}/enabled`).set(!isEnabled);
+        toast(`Task ${isEnabled ? 'paused' : 'enabled'}`, isEnabled ? 'error' : 'success');
+    },
+
+    async deleteTask(taskId) {
+        if (!confirm('Delete this task?')) return;
+        await db.ref(`tasks/${taskId}`).remove();
+        toast('🗑️ Task deleted', 'error');
+    },
+
+    // ─────────────────────────────────────────
+    // BROADCAST
+    // ─────────────────────────────────────────
+    listenBroadcasts() {
+        db.ref('broadcast_queue').orderByChild('timestamp').limitToLast(20).on('value', snap => {
+            const items = [];
+            snap.forEach(child => items.push({ ...child.val(), _id: child.key }));
+            items.sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+            const el = document.getElementById('bc-list');
+            if (!el) return;
+            if (items.length === 0) { el.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>No broadcasts queued</p></div>`; return; }
+            el.innerHTML = items.map(item => {
+                const statusCls = item.status === 'sent' ? 'bc-sent' : item.status === 'failed' ? 'bc-failed' : 'bc-pending';
+                const time = item.timestamp ? new Date(item.timestamp).toLocaleTimeString('en-IN') : '';
+                return `<div class="bc-item">
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+                      <span class="bc-status ${statusCls}">${item.status||'pending'}</span>
+                      <span style="font-size:.7rem;color:var(--muted)">${time}</span>
+                    </div>
+                    <div style="font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml((item.message||'').substring(0,100))}</div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="AdminApp.deleteBroadcast('${item._id}')"><i class="fas fa-trash"></i></button>
+                </div>`;
+            }).join('');
         });
     },
 
-    deleteItem(path, id) {
-        if (confirm("⚠️ Permanently delete this record?")) {
-            db.ref(`${path}/${id}`).remove().then(() => {
-                console.log(`✅ Deleted: ${path}/${id}`);
-            }).catch(err => {
-                alert("❌ Delete failed: " + err.message);
+    async sendBroadcast() {
+        const msg   = document.getElementById('bc-msg')?.value.trim();
+        const img   = document.getElementById('bc-img')?.value.trim();
+        const link  = document.getElementById('bc-link')?.value.trim();
+        const label = document.getElementById('bc-link-label')?.value.trim() || 'Open Link';
+        if (!msg) { toast('❌ Message cannot be empty', 'error'); return; }
+        try {
+            await db.ref('broadcast_queue').push({
+                message: msg, image: img || null,
+                link: link || null, link_label: label,
+                status: 'pending', timestamp: Date.now(), target: 'all'
             });
-        }
+            toast('📢 Broadcast queued! Bot will send to all users.', 'success');
+            ['bc-msg','bc-img','bc-link','bc-link-label'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+            this.pushActivity(`📢 Broadcast sent: "${msg.substring(0,50)}"`, '#ec4899');
+        } catch(e) { toast('❌ ' + e.message, 'error'); }
     },
 
-    // ==================== BROADCAST ENGINE ====================
-    sendBroadcast() {
-        const message = document.getElementById('bc-msg').value?.trim();
-        const image = document.getElementById('bc-img').value?.trim();
+    async deleteBroadcast(id) {
+        await db.ref(`broadcast_queue/${id}`).remove();
+        toast('🗑️ Broadcast removed', 'error');
+    },
 
-        if (!message) {
-            alert("❌ Message cannot be empty");
-            return;
-        }
+    // ─────────────────────────────────────────
+    // SETTINGS
+    // ─────────────────────────────────────────
+    async _getConfig() {
+        const snap = await db.ref('system_config').once('value');
+        return snap.val() || {};
+    },
 
-        const broadcastData = {
-            message,
-            image: image || null,
-            status: "pending",
-            timestamp: Date.now(),
-            type: "system_notification",
-            targetUsers: "all"
+    async loadSettings() {
+        try {
+            const cfg = await this._getConfig();
+            setVal('cfg-maintenance', cfg.maintenance_mode, 'checkbox');
+            setVal('cfg-earn-enabled', cfg.earn_enabled !== false, 'checkbox');
+            setVal('cfg-deposits-open', cfg.deposits_open !== false, 'checkbox');
+            setVal('cfg-withdrawals-open', cfg.withdrawals_open !== false, 'checkbox');
+            setVal('cfg-watch-enabled', cfg.watch_enabled !== false, 'checkbox');
+            setVal('cfg-deposit-amount', cfg.deposit_amount || 50);
+            setVal('cfg-task-reward', cfg.task_reward || 10);
+            setVal('cfg-min-withdraw', cfg.min_withdraw || 500);
+            setVal('cfg-referrer-bonus', cfg.referrer_bonus || 100);
+            setVal('cfg-referred-bonus', cfg.referred_bonus || 20);
+            setVal('cfg-ref-threshold', cfg.referral_threshold || 25);
+            setVal('cfg-upi-id', cfg.upi_id || '');
+            setVal('cfg-upi-name', cfg.upi_name || 'Surface Hub');
+            setVal('cfg-welcome-bonus', cfg.welcome_bonus || 20);
+            setVal('cfg-website-url', cfg.website_url || 'https://chatting-app-ae637.web.app');
+            setVal('cfg-maintenance-msg', cfg.maintenance_message || '');
+            setVal('cfg-welcome-msg', cfg.welcome_message || '');
+            setVal('cfg-admin-ids', (cfg.admin_ids || []).join(','));
+        } catch(e) { console.error('Settings load error:', e); }
+    },
+
+    async saveSettings() {
+        const cfg = {
+            maintenance_mode:    document.getElementById('cfg-maintenance')?.checked || false,
+            earn_enabled:        document.getElementById('cfg-earn-enabled')?.checked !== false,
+            deposits_open:       document.getElementById('cfg-deposits-open')?.checked !== false,
+            withdrawals_open:    document.getElementById('cfg-withdrawals-open')?.checked !== false,
+            watch_enabled:       document.getElementById('cfg-watch-enabled')?.checked !== false,
+            deposit_amount:      parseFloat(document.getElementById('cfg-deposit-amount')?.value) || 50,
+            task_reward:         parseFloat(document.getElementById('cfg-task-reward')?.value) || 10,
+            min_withdraw:        parseFloat(document.getElementById('cfg-min-withdraw')?.value) || 500,
+            referrer_bonus:      parseFloat(document.getElementById('cfg-referrer-bonus')?.value) || 100,
+            referred_bonus:      parseFloat(document.getElementById('cfg-referred-bonus')?.value) || 20,
+            referral_threshold:  parseInt(document.getElementById('cfg-ref-threshold')?.value) || 25,
+            upi_id:              document.getElementById('cfg-upi-id')?.value.trim() || '',
+            upi_name:            document.getElementById('cfg-upi-name')?.value.trim() || 'Surface Hub',
+            welcome_bonus:       parseFloat(document.getElementById('cfg-welcome-bonus')?.value) || 20,
+            website_url:         document.getElementById('cfg-website-url')?.value.trim() || '',
+            maintenance_message: document.getElementById('cfg-maintenance-msg')?.value.trim() || '',
+            welcome_message:     document.getElementById('cfg-welcome-msg')?.value.trim() || '',
+            admin_ids:           (document.getElementById('cfg-admin-ids')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+            last_updated:        Date.now(),
+            updated_by:          this.user?.email || 'admin'
         };
-
-        db.ref('broadcast_queue').push(broadcastData).then(ref => {
-            console.log("✅ Broadcast queued:", ref.key);
-            alert("📢 BROADCAST QUEUED - Bot will process soon");
-            document.getElementById('bc-msg').value = '';
-            document.getElementById('bc-img').value = '';
-        }).catch(err => {
-            alert("❌ Error: " + err.message);
-        });
+        try {
+            await db.ref('system_config').set(cfg);
+            setText('settings-status', '✅ Settings saved at ' + new Date().toLocaleTimeString('en-IN'));
+            toast('✅ Settings saved! Bot will use new values instantly.', 'success');
+            this.pushActivity('⚙️ System settings updated', '#6366f1');
+        } catch(e) { toast('❌ Error saving settings: ' + e.message, 'error'); }
     },
 
-    monitorBroadcasts() {
-        db.ref('broadcast_queue').on('value', snap => {
-            const container = document.getElementById('bc-list');
-            if (!container) return;
+    // ─────────────────────────────────────────
+    // ANALYTICS
+    // ─────────────────────────────────────────
+    renderAnalytics() {
+        const users = Object.values(_allUsers);
+        const today = new Date().toDateString();
+        const todayUsers = users.filter(u => u.joined_at && new Date(u.joined_at * 1000).toDateString() === today).length;
+        const topBal = Math.max(...users.map(u => u.balance || 0), 0);
+        setText('an-today', todayUsers);
+        setText('an-today', todayUsers);
+        setText('an-earnings-today', '₹' + users.filter(u => new Date((u.joined_at||0)*1000).toDateString() === today).reduce((s,u)=>s+(u.balance||0),0).toFixed(0));
+        setText('an-tasks-today', users.reduce((s,u)=>s+(u.earnings?.tasks_completed||0),0));
+        setText('an-top-balance', '₹' + topBal.toFixed(0));
 
-            container.innerHTML = '';
-            let hasItems = false;
+        // Top earners
+        const sorted = [...users].sort((a,b) => (b.balance||0) - (a.balance||0)).slice(0,10);
+        const maxBal = sorted[0]?.balance || 1;
+        document.getElementById('top-earners-list').innerHTML = sorted.map((u,i) => {
+            const name = u.username || u.first_name || u._id;
+            const pct  = ((u.balance||0) / maxBal * 100).toFixed(0);
+            return `<div class="top-earner">
+              <div class="rank ${i<3?`rank-${i+1}`:''}">${['🥇','🥈','🥉'][i]||i+1}</div>
+              <div style="flex:1;min-width:0"><div style="font-size:.83rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(String(name))}</div>
+              <div class="chart-bar-bg" style="margin-top:4px"><div class="chart-bar-fill" style="width:${pct}%"></div></div></div>
+              <div style="font-size:.85rem;font-weight:700;flex-shrink:0">₹${(u.balance||0).toFixed(0)}</div>
+            </div>`;
+        }).join('') || '<div class="empty-state"><i class="fas fa-trophy"></i><p>No data</p></div>';
 
-            snap.forEach(child => {
-                hasItems = true;
-                const item = child.val();
-                const statusColor = {
-                    'pending': '#eab308',
-                    'processing': '#3b82f6',
-                    'sent': '#10b981',
-                    'failed': '#ef4444'
-                }[item.status] || '#888';
-
-                const timeAgo = this.getTimeAgo(item.timestamp);
-
-                container.innerHTML += `
-                    <div class="inventory-item">
-                        <div style="flex-grow: 1;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                                <span style="padding: 4px 10px; border-radius: 50px; background: ${statusColor}; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                                    ${item.status || 'pending'}
-                                </span>
-                                <span style="font-size: 0.75rem; opacity: 0.6;">${timeAgo}</span>
-                            </div>
-                            <p style="font-size: 0.9rem; margin: 5px 0 0 0; line-height: 1.4;">
-                                ${item.message.substring(0, 80)}${item.message.length > 80 ? '...' : ''}
-                            </p>
-                        </div>
-                        <button class="nav-item" style="padding: 5px 10px; margin: 0; color: #ef4444;" 
-                            onclick="AdminApp.deleteItem('broadcast_queue', '${child.key}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-            });
-
-            if (!hasItems) {
-                container.innerHTML = `
-                    <div class="glass-card" style="background: rgba(0,0,0,0.05); text-align: center;">
-                        <p style="opacity: 0.5;">📭 No active broadcasts</p>
-                    </div>
-                `;
-            }
-        });
+        // Breakdown
+        const totalBal = users.reduce((s,u)=>s+(u.balance||0),0);
+        const totalTasks = users.reduce((s,u)=>s+(u.earnings?.tasks_completed||0),0);
+        document.getElementById('earnings-breakdown').innerHTML = [
+            ['Total Users', users.length, users.length, '#3b82f6'],
+            ['Activated', users.filter(u=>u.deposit_status).length, users.length, '#10b981'],
+            ['Total Tasks Done', totalTasks, Math.max(totalTasks,1), '#f59e0b'],
+            ['Total Balance Pool', `₹${totalBal.toFixed(0)}`, null, '#6366f1'],
+        ].map(([label, val, max, color]) => `
+          <div class="chart-bar-wrap">
+            <div class="chart-label"><span>${label}</span><strong>${val}</strong></div>
+            ${max !== null ? `<div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${max>0?(+String(val).replace('₹','')/max*100).toFixed(0):0}%;background:${color}"></div></div>` : ''}
+          </div>`).join('');
     },
 
-    // ==================== INVENTORY LISTENERS (REAL-TIME) ====================
-    listenToInventory() {
-        // CONTENT INVENTORY (Posts with Video & Share Indicators)
-        db.ref('content').on('value', snap => {
-            const postList = document.getElementById('post-list');
-            if (!postList) return;
-
-            postList.innerHTML = '';
-            let postCount = 0;
-
-            snap.forEach(child => {
-                postCount++;
-                const item = child.val();
-                const hasVideo = item.videoUrl ? '🎥' : '📄';
-                const shareCount = [
-                    item.shareOptions?.facebook,
-                    item.shareOptions?.twitter,
-                    item.shareOptions?.whatsapp,
-                    item.shareOptions?.telegram
-                ].filter(Boolean).length;
-
-                postList.innerHTML += `
-                    <div class="inventory-item" style="flex-direction: column; align-items: flex-start;">
-                        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex-grow: 1;">
-                                <strong style="color: var(--p);">[${item.category}] ${hasVideo}</strong>
-                                <div style="margin-top: 4px; font-size: 0.9rem;">${item.title}</div>
-                                <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 4px;">
-                                    📤 Share Options: ${shareCount} enabled
-                                </div>
-                            </div>
-                            <button class="nav-item" style="padding: 8px 12px; margin: 0; color: #ef4444;" 
-                                onclick="AdminApp.deleteItem('content', '${child.key}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            if (postCount === 0) {
-                postList.innerHTML = '<p style="opacity: 0.5; text-align: center;">No posts yet</p>';
-            }
-        });
-
-        // TASK INVENTORY
-        db.ref('tasks').on('value', snap => {
-            const taskList = document.getElementById('task-list');
-            if (!taskList) return;
-
-            taskList.innerHTML = '';
-            let taskCount = 0;
-
-            snap.forEach(child => {
-                taskCount++;
-                const item = child.val();
-
-                taskList.innerHTML += `
-                    <div class="inventory-item">
-                        <div style="flex-grow: 1;">
-                            <strong>${item.title}</strong><br>
-                            <small style="opacity: 0.5;">💰 Reward: ₹${item.reward} | 📋 Completions: ${item.completions || 0}</small>
-                        </div>
-                        <button class="nav-item" style="padding: 5px 10px; margin: 0; color: #ef4444;" 
-                            onclick="AdminApp.deleteItem('tasks', '${child.key}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-            });
-
-            if (taskCount === 0) {
-                taskList.innerHTML = '<p style="opacity: 0.5; text-align: center;">No tasks created</p>';
-            }
-        });
-    },
-
-    // ==================== UTILITY FUNCTIONS ====================
-    getTimeAgo(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
-
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return "Just now";
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        return `${days}d ago`;
+    // ─────────────────────────────────────────
+    // ACTIVITY FEED
+    // ─────────────────────────────────────────
+    _activityItems: [],
+    pushActivity(text, color = '#3b82f6') {
+        this._activityItems.unshift({ text, color, time: new Date().toLocaleTimeString('en-IN') });
+        if (this._activityItems.length > 20) this._activityItems.pop();
+        const feed = document.getElementById('activity-feed');
+        if (!feed) return;
+        feed.innerHTML = this._activityItems.map(item => `
+          <div class="activity-item">
+            <div class="act-icon" style="background:${item.color}22;color:${item.color}"><i class="fas fa-circle-dot"></i></div>
+            <div class="act-text">${escHtml(item.text)}</div>
+            <div class="act-time">${item.time}</div>
+          </div>`).join('');
     }
 };
 
-// ==================== AUTO-INIT ====================
-window.AdminApp = AdminApp; // Make global for onclick handlers
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+function setVal(id, val, type = 'text') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (type === 'checkbox') el.checked = !!val;
+    else el.value = val ?? '';
+}
+function setBadge(id, count) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = count;
+    el.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
+let _toastTimer;
+function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+// ── Expose to global for onclick handlers ──
+window.AdminApp = AdminApp;
+window.toast    = toast;
+
+// ── Wire up search/filter inputs once DOM ready ──
 document.addEventListener('DOMContentLoaded', () => {
     AdminApp.init();
+
+    // live search
+    document.getElementById('user-search')?.addEventListener('input', () => AdminApp.renderUsersTable());
+    document.getElementById('user-status-filter')?.addEventListener('change', () => AdminApp.renderUsersTable());
+    document.getElementById('user-sort')?.addEventListener('change', () => AdminApp.renderUsersTable());
+    document.getElementById('ref-search')?.addEventListener('input', () => {
+        const q = document.getElementById('ref-search').value.toLowerCase();
+        document.querySelectorAll('#referrals-tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
 });

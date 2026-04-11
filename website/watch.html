@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surface Hub — Watch</title>
+<meta name="description" content="Watch exclusive videos, content and earn rewards on Surface Hub.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="css/responsive.css?v=3.0.0">
+
+<!-- Ad Scripts -->
+<script>
+  atOptions = { 'key':'bfb9ddbec7e3e5681a5312f48a68bb2e','format':'iframe','height':90,'width':728,'params':{} };
+</script>
+<script src="https://www.highperformanceformat.com/bfb9ddbec7e3e5681a5312f48a68bb2e/invoke.js"></script>
+
+<style>
+:root{
+  --p:#3b82f6;--p2:#6366f1;--g:linear-gradient(135deg,#3b82f6,#6366f1);
+  --bg:#060810;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.07);
+  --muted:rgba(255,255,255,0.5);--success:#10b981;--warn:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:#fff;min-height:100vh;padding-bottom:120px}
+
+/* ── HERO HEADER ── */
+.watch-header{
+  background:linear-gradient(180deg,rgba(59,130,246,0.15) 0%,transparent 100%);
+  border-bottom:1px solid var(--border);padding:2rem 1.5rem 1.5rem;text-align:center;
+  position:relative;overflow:hidden
+}
+.watch-header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% -20%,rgba(99,102,241,0.3),transparent 65%);
+  pointer-events:none
+}
+.watch-header-logo{font-size:.75rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+.watch-header-title{font-size:2rem;font-weight:900;background:var(--g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.watch-header-sub{font-size:.85rem;color:var(--muted);margin-top:.4rem}
+.watch-stats{display:flex;justify-content:center;gap:1.5rem;margin-top:1rem;flex-wrap:wrap}
+.watch-stat{font-size:.8rem;color:var(--muted)}<style>.watch-stat strong{color:#fff;font-weight:700}
+
+/* ── CATEGORY FILTER ── */
+.cat-scroll{display:flex;gap:.6rem;overflow-x:auto;padding:1rem 1.5rem;scrollbar-width:none;-ms-overflow-style:none}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);border-radius:50px;padding:.45rem 1.1rem;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:.2s;font-family:'Outfit',sans-serif}
+.cat-btn:hover{border-color:rgba(59,130,246,.5);color:#fff}
+.cat-btn.active{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.5);color:#fff}
+
+/* ── FEATURED STRIP ── */
+.featured-section{padding:0 1.5rem 1.5rem}
+.section-title{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.featured-card{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  overflow:hidden;display:flex;gap:0;flex-direction:row;transition:.25s;cursor:pointer;
+  position:relative
+}
+.featured-card:hover{border-color:rgba(99,102,241,.5);transform:translateY(-2px);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.featured-thumb{width:55%;flex-shrink:0;position:relative;overflow:hidden}
+.featured-thumb img{width:100%;height:240px;object-fit:cover;display:block;transition:.3s}
+.featured-card:hover .featured-thumb img{transform:scale(1.04)}
+.play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);transition:.2s}
+.play-btn-big{width:60px;height:60px;border-radius:50%;background:rgba(59,130,246,.9);display:flex;align-items:center;justify-content:center;font-size:1.4rem;transition:.2s}
+.featured-card:hover .play-btn-big{transform:scale(1.1);background:rgba(59,130,246,1)}
+.featured-info{padding:1.5rem;flex:1;display:flex;flex-direction:column;justify-content:center}
+.feat-cat{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--p);margin-bottom:.4rem}
+.feat-title{font-size:1.1rem;font-weight:700;line-height:1.3;margin-bottom:.6rem}
+.feat-desc{font-size:.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem}
+.feat-meta{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+.feat-tag{background:rgba(255,255,255,.06);border-radius:50px;padding:3px 10px;font-size:.68rem;color:var(--muted)}
+.feat-reward{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);border-radius:50px;padding:3px 12px;font-size:.72rem;color:var(--success);font-weight:700}
+.feat-watch-btn{display:inline-flex;align-items:center;gap:.5rem;background:var(--g);color:#fff;border:none;border-radius:10px;padding:.65rem 1.2rem;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;margin-top:1rem;transition:.2s;text-decoration:none}
+.feat-watch-btn:hover{opacity:.9}
+
+/* ── VIDEO GRID ── */
+.posts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;padding:0 1.5rem}
+.post-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:.25s;cursor:pointer}
+.post-card:hover{border-color:rgba(59,130,246,.4);transform:translateY(-3px);box-shadow:0 15px 40px rgba(0,0,0,.35)}
+.post-thumb-wrap{position:relative;overflow:hidden}
+.post-thumb{width:100%;height:180px;object-fit:cover;display:block;transition:.3s}
+.post-card:hover .post-thumb{transform:scale(1.05)}
+.thumb-placeholder{width:100%;height:180px;background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(99,102,241,.12));display:flex;align-items:center;justify-content:center;font-size:3rem}
+.play-overlay-sm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);opacity:0;transition:.25s}
+.post-card:hover .play-overlay-sm{opacity:1}
+.play-btn-sm{width:44px;height:44px;border-radius:50%;background:rgba(59,130,246,.9);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.cat-pill{position:absolute;top:.6rem;left:.6rem;background:rgba(0,0,0,.7);border-radius:50px;padding:2px 10px;font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.reward-pill{position:absolute;top:.6rem;right:.6rem;background:rgba(16,185,129,.85);border-radius:50px;padding:2px 10px;font-size:.65rem;font-weight:700}
+.post-body{padding:1rem}
+.post-title{font-size:.9rem;font-weight:700;line-height:1.35;margin-bottom:.4rem}
+.post-desc{font-size:.75rem;color:var(--muted);line-height:1.5;margin-bottom:.8rem}
+.post-footer{display:flex;align-items:center;justify-content:space-between}
+.post-cat-tag{font-size:.65rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--p)}
+.post-watch-btn{display:inline-flex;align-items:center;gap:.4rem;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--p);border-radius:8px;padding:.4rem .9rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:.2s;text-decoration:none}
+.post-watch-btn:hover{background:rgba(59,130,246,.3)}
+
+/* ── SEARCH ── */
+.search-wrap{padding:.5rem 1.5rem 0;position:relative}
+.search-wrap input{
+  width:100%;background:var(--card);border:1px solid var(--border);color:#fff;
+  border-radius:14px;padding:.7rem 1rem .7rem 2.6rem;font-family:'Outfit',sans-serif;
+  font-size:.85rem;outline:none;transition:.2s
+}
+.search-wrap input:focus{border-color:rgba(59,130,246,.5)}
+.search-wrap i{position:absolute;left:2.2rem;top:50%;transform:translateY(-50%);color:var(--muted)}
+
+/* ── EMPTY STATE ── */
+.empty-watch{text-align:center;padding:4rem 1.5rem;color:var(--muted)}
+.empty-watch i{font-size:3rem;margin-bottom:1rem;display:block;opacity:.5}
+.empty-watch h3{font-size:1.1rem;margin-bottom:.5rem;color:#fff}
+.empty-watch p{font-size:.85rem}
+
+/* ── LOADING ── */
+.skeleton{background:linear-gradient(90deg,var(--card) 25%,rgba(255,255,255,.08) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.skel-img{height:180px}.skel-body{padding:1rem}.skel-line{height:12px;margin-bottom:.6rem}
+.skel-line.sm{width:60%;height:10px}.skel-line.xs{width:40%;height:8px}
+
+/* ── BOT LINK BANNER ── */
+.bot-banner{
+  margin:1.5rem 1.5rem 0;padding:1.2rem 1.5rem;
+  background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(99,102,241,.12));
+  border:1px solid rgba(59,130,246,.25);border-radius:16px;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap
+}
+.bot-banner-text{flex:1;min-width:200px}
+.bot-banner-text h4{font-size:.9rem;font-weight:700;margin-bottom:.2rem}
+.bot-banner-text p{font-size:.75rem;color:var(--muted)}
+.bot-banner-btn{background:var(--g);color:#fff;border:none;border-radius:10px;padding:.6rem 1.2rem;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;text-decoration:none;font-family:'Outfit',sans-serif;display:inline-flex;align-items:center;gap:.4rem}
+
+/* ── AD WRAP ── */
+.ad-wrap{padding:.8rem 1.5rem;text-align:center;overflow:hidden}
+
+/* ── NO IMAGE COLORS ── */
+.no-img-1{background:linear-gradient(135deg,#1e3a5f,#0f2040)}
+.no-img-2{background:linear-gradient(135deg,#1a1f3a,#0d0f28)}
+.no-img-3{background:linear-gradient(135deg,#1e2d1e,#0d1a0d)}
+.no-img-4{background:linear-gradient(135deg,#3a1e1e,#1a0d0d)}
+
+@media(max-width:640px){
+  .featured-card{flex-direction:column}
+  .featured-thumb{width:100%}
+  .featured-thumb img{height:200px}
+  .watch-header-title{font-size:1.5rem}
+  .posts-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="watch-header">
+  <div class="watch-header-logo">⚡ Surface Hub</div>
+  <h1 class="watch-header-title">📺 Watch & Earn</h1>
+  <div class="watch-header-sub">Explore videos, posts & exclusive content — earn rewards while you watch</div>
+  <div class="watch-stats">
+    <div class="watch-stat"><strong id="stat-total">—</strong> Videos</div>
+    <div class="watch-stat"><strong id="stat-categories">—</strong> Categories</div>
+    <div class="watch-stat"><strong id="stat-rewards">Up to ₹50</strong> Rewards</div>
+  </div>
+</div>
+
+<!-- ── AD BANNER ── -->
+<div class="ad-wrap">
+  <script async="async" data-cfasync="false" src="https://pl29071710.profitablecpmratenetwork.com/dafa116820cb26f5e3dc4219757633bf/invoke.js"></script>
+  <div id="container-dafa116820cb26f5e3dc4219757633bf"></div>
+</div>
+
+<!-- ── BOT LINK BANNER ── -->
+<div class="bot-banner">
+  <div class="bot-banner-text">
+    <h4>🤖 Earn rewards in Telegram Bot</h4>
+    <p>Complete tasks, invite friends, and withdraw real money via our bot</p>
+  </div>
+  <a href="https://t.me/SurfaceWBot" target="_blank" class="bot-banner-btn"><i class="fab fa-telegram"></i> Open Bot</a>
+</div>
+
+<!-- ── SEARCH ── -->
+<div class="search-wrap">
+  <i class="fas fa-search"></i>
+  <input type="text" id="watch-search" placeholder="Search videos, categories..." oninput="filterPosts()">
+</div>
+
+<!-- ── CATEGORIES ── -->
+<div class="cat-scroll" id="cat-scroll">
+  <button class="cat-btn active" onclick="setCategory('all',this)">🎬 All</button>
+  <button class="cat-btn" onclick="setCategory('Entertainment',this)">🎬 Entertainment</button>
+  <button class="cat-btn" onclick="setCategory('Education',this)">📚 Education</button>
+  <button class="cat-btn" onclick="setCategory('News',this)">📰 News</button>
+  <button class="cat-btn" onclick="setCategory('Tech',this)">💻 Tech</button>
+  <button class="cat-btn" onclick="setCategory('Sports',this)">⚽ Sports</button>
+  <button class="cat-btn" onclick="setCategory('Music',this)">🎵 Music</button>
+</div>
+
+<!-- ── FEATURED ── -->
+<div class="featured-section" id="featured-section" style="display:none">
+  <div class="section-title">⭐ Featured Post</div>
+  <div id="featured-card"></div>
+</div>
+
+<!-- ── POSTS GRID ── -->
+<div style="padding:0 1.5rem;margin-bottom:1rem">
+  <div class="section-title" id="grid-section-title">All Posts</div>
+</div>
+
+<!-- loading skeletons -->
+<div class="posts-grid" id="loading-grid">
+  ${Array(6).fill(0).map(()=>`
+    <div class="skel-card">
+      <div class="skel-img skeleton"></div>
+      <div class="skel-body">
+        <div class="skel-line skeleton"></div>
+        <div class="skel-line sm skeleton"></div>
+        <div class="skel-line xs skeleton"></div>
+      </div>
+    </div>`).join('')}
+</div>
+
+<div class="posts-grid" id="posts-grid" style="display:none"></div>
+
+<div class="empty-watch" id="empty-watch" style="display:none">
+  <i class="fas fa-play-circle"></i>
+  <h3>No posts found</h3>
+  <p>Try a different category or search term</p>
+</div>
+
+<!-- ── BOTTOM AD ── -->
+<div class="ad-wrap" style="margin-top:2rem">
+  <script src="https://pl29071708.profitablecpmratenetwork.com/be/d4/a7/bed4a7d2f891321adb05fbd064bb1832.js"></script>
+</div>
+
+<!-- ── FIREBASE ── -->
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+    projectId: "chatting-app-ae637",
+    appId: "1:715270614018:web:1e41bf63bbae736efd0b1b",
+    databaseURL: "https://chatting-app-ae637-default-rtdb.firebaseio.com",
+    storageBucket: "chatting-app-ae637.appspot.com",
+    apiKey: "AIzaSyBolwpdLxlR5KYcc-Ga6KRuIS5WvWdES7I",
+    authDomain: "chatting-app-ae637.firebaseapp.com",
+    messagingSenderId: "715270614018"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let _allPosts = [];
+let _activeCategory = 'all';
+
+function esc(str) { return String(str||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function noImgClass(i) { return ['no-img-1','no-img-2','no-img-3','no-img-4'][i % 4]; }
+
+function catEmoji(cat) {
+    const map = { Entertainment:'🎬', Education:'📚', News:'📰', Tech:'💻', Sports:'⚽', Music:'🎵' };
+    return (map[cat] || '🎬') + ' ' + (cat || 'General');
+}
+
+function renderFeatured(posts) {
+    const featuredArr = posts.filter(p => p.featured);
+    const sec = document.getElementById('featured-section');
+    const card = document.getElementById('featured-card');
+    if (featuredArr.length === 0) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    const p = featuredArr[0];
+    card.innerHTML = `
+      <a href="${esc(p.video_url)}" target="_blank" class="featured-card" style="text-decoration:none;color:inherit">
+        <div class="featured-thumb">
+          ${p.image
+            ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'${noImgClass(0)} thumb-placeholder\\'>📺</div>'">`
+            : `<div class="${noImgClass(0)} thumb-placeholder" style="height:240px">📺</div>`}
+          <div class="play-overlay"><div class="play-btn-big"><i class="fas fa-play"></i></div></div>
+        </div>
+        <div class="featured-info">
+          <div class="feat-cat">${esc(catEmoji(p.category))}</div>
+          <div class="feat-title">${esc(p.title)}</div>
+          <div class="feat-desc">${esc((p.description||'').substring(0,160))}${(p.description||'').length>160?'...':''}</div>
+          <div class="feat-meta">
+            <span class="feat-tag"><i class="fas fa-clock" style="margin-right:4px"></i>${new Date(p.timestamp||Date.now()).toLocaleDateString('en-IN')}</span>
+            ${p.reward ? `<span class="feat-reward">💰 +₹${p.reward}</span>` : ''}
+          </div>
+          <div style="margin-top:1rem"><span class="feat-watch-btn"><i class="fas fa-play"></i> Watch Now</span></div>
+        </div>
+      </a>`;
+}
+
+function renderGrid(posts) {
+    const grid = document.getElementById('posts-grid');
+    const empty = document.getElementById('empty-watch');
+    const sectionTitle = document.getElementById('grid-section-title');
+    grid.style.display = 'none';
+    empty.style.display = 'none';
+
+    const filtered = posts.filter(p => {
+        const cat = _activeCategory === 'all' || (p.category || '') === _activeCategory;
+        const q = (document.getElementById('watch-search')?.value || '').toLowerCase();
+        const search = !q || (p.title||'').toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q);
+        return cat && search && !p.featured;
+    });
+
+    sectionTitle.textContent = _activeCategory === 'all' ? `All Posts (${filtered.length})` : `${catEmoji(_activeCategory)} (${filtered.length})`;
+
+    if (filtered.length === 0) { empty.style.display = 'block'; return; }
+    grid.style.display = 'grid';
+    grid.innerHTML = filtered.map((p, i) => `
+      <a href="${esc(p.video_url||'#')}" target="_blank" class="post-card" style="text-decoration:none;color:inherit">
+        <div class="post-thumb-wrap">
+          ${p.image
+            ? `<img class="post-thumb" src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'${noImgClass(i)} thumb-placeholder\\'>📺</div>'">`
+            : `<div class="${noImgClass(i)} thumb-placeholder">📺</div>`}
+          <div class="play-overlay-sm"><div class="play-btn-sm"><i class="fas fa-play"></i></div></div>
+          <span class="cat-pill">${esc(catEmoji(p.category))}</span>
+          ${p.reward ? `<span class="reward-pill">+₹${p.reward}</span>` : ''}
+        </div>
+        <div class="post-body">
+          <div class="post-title">${esc(p.title||'Untitled')}</div>
+          <div class="post-desc">${esc((p.description||'').substring(0,90))}${(p.description||'').length>90?'...':''}</div>
+          <div class="post-footer">
+            <span class="post-cat-tag">${esc(catEmoji(p.category))}</span>
+            <span class="post-watch-btn"><i class="fas fa-play"></i> Watch</span>
+          </div>
+        </div>
+      </a>`).join('');
+}
+
+function setCategory(cat, el) {
+    _activeCategory = cat;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    if (el) el.classList.add('active');
+    renderGrid(_allPosts);
+}
+
+function filterPosts() { renderGrid(_allPosts); }
+
+// Load data from Firebase
+db.ref('watch_posts').orderByChild('timestamp').on('value', snap => {
+    _allPosts = [];
+    snap.forEach(child => {
+        const p = child.val();
+        if (p && p.enabled !== false) _allPosts.push({ ...p, _id: child.key });
+    });
+    _allPosts.sort((a,b) => (b.featured?1:0)-(a.featured?1:0) || (b.timestamp||0)-(a.timestamp||0));
+
+    // Update stats
+    const cats = [...new Set(_allPosts.map(p=>p.category).filter(Boolean))];
+    document.getElementById('stat-total').textContent = _allPosts.length;
+    document.getElementById('stat-categories').textContent = cats.length || 1;
+
+    // Hide loading
+    document.getElementById('loading-grid').style.display = 'none';
+
+    renderFeatured(_allPosts);
+    renderGrid(_allPosts);
+});
+</script>
+
+<!-- ── popstate-based navigation (back to previous page) ── -->
+<script>
+document.addEventListener('keydown', e => { if (e.key === 'Escape') history.back(); });
+</script>
+</body>
+</html>
