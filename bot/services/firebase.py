@@ -279,17 +279,27 @@ def get_broadcast_queue() -> dict:
 def delete_broadcast(qid: str):
     db.reference(f"broadcast_queue/{qid}").delete()
 
-def add_broadcast_from_web(message: str, image_url: str = None):
+def add_broadcast_from_web(message: str, image: str = None, link: str = None, link_label: str = "Open Link"):
     db.reference("broadcast_queue").push({
         "message": message,
-        "image_url": image_url,
+        "image": image,
+        "link": link,
+        "link_label": link_label,
         "status": "pending",
-        "timestamp": int(time.time()),
+        "timestamp": int(time.time() * 1000),
+        "target": "all"
     })
 
 def get_all_user_ids() -> list[int]:
+    """Retrieves all user IDs from the database, skipping non-numeric keys."""
     users = db.reference("users").get() or {}
-    return [int(uid) for uid in users.keys()]
+    uids = []
+    for k in users.keys():
+        try:
+            uids.append(int(k))
+        except (ValueError, TypeError):
+            continue
+    return uids
 
 # ════════════════════════════════════════════════════════════════
 #  CONTENT / NEWS FUNCTIONS

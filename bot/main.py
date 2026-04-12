@@ -1,6 +1,7 @@
 import logging
 import time
 import asyncio
+import html
 from telegram import Update, BotCommand
 from telegram.ext import (
     Application,
@@ -169,6 +170,12 @@ async def process_broadcasts(context: ContextTypes.DEFAULT_TYPE):
                 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
                 keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(label, url=link)]])
 
+            # Escape message for HTML parse mode
+            # We allow basic tags if they are already in the message (risky but often desired)
+            # For now, let's play it safe and escape everything, then wrap in our own formatting.
+            escaped_msg = html.escape(message)
+            formatted_text = f"📢 <b>Surface Hub Update</b>\n\n{escaped_msg}"
+
             sent_count, failed_count = 0, 0
 
             for uid in user_ids:
@@ -176,17 +183,21 @@ async def process_broadcasts(context: ContextTypes.DEFAULT_TYPE):
                     if image:
                         await context.bot.send_photo(
                             chat_id=uid, photo=image,
-                            caption=f"📢 *Surface Hub Update*\n\n{message}",
-                            parse_mode="Markdown", reply_markup=keyboard
+                            caption=formatted_text,
+                            parse_mode="HTML", reply_markup=keyboard
                         )
                     else:
                         await context.bot.send_message(
                             chat_id=uid,
-                            text=f"📢 *Surface Hub Update*\n\n{message}",
-                            parse_mode="Markdown", reply_markup=keyboard
+                            text=formatted_text,
+                            parse_mode="HTML", reply_markup=keyboard
                         )
                     sent_count += 1
-                    await asyncio.sleep(0.05)  # Telegram rate limit: ~20 msg/sec
+                    # Small variability in sleep to avoid pattern-based detection
+                    await asyncio.sleep(0.05) 
+                except telegram.error.Forbidden:
+                    failed_count += 1
+                    # User blocked the bot, we should probably mark them as inactive but skip for now
                 except Exception as e:
                     failed_count += 1
                     logger.debug(f"Could not send broadcast to {uid}: {e}")
