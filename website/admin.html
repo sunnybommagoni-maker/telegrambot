@@ -536,6 +536,7 @@ select option{background:#0b0f1a}
       <div class="form-group"><label>Maintenance Message</label><textarea id="cfg-maintenance-msg" rows="3" placeholder="🔧 Bot is under maintenance. Please try later."></textarea></div>
       <div class="form-group"><label>Welcome Message (new users)</label><textarea id="cfg-welcome-msg" rows="3" placeholder="Welcome to Surface Hub! 🎉"></textarea></div>
       <div class="form-group"><label>Admin Telegram IDs <small>(comma separated)</small></label><input type="text" id="cfg-admin-ids" placeholder="5936922644,123456789"></div>
+      <div class="form-group"><label>Bot Watch Shortlink <small>(ShrinkEarn/Shortner Link)</small></label><input type="text" id="cfg-watch-shortlink" placeholder="https://shrinkearn.com/..."></div>
     </div>
   </div>
   <div style="text-align:right;margin-top:1rem">
@@ -579,6 +580,11 @@ select option{background:#0b0f1a}
     <div class="form-group"><label>Title</label><input type="text" id="wp-title" placeholder="Amazing Video: ..."></div>
     <div class="form-group"><label>Description</label><textarea id="wp-desc" rows="3" placeholder="Short description of this video/post..."></textarea></div>
     <div class="form-group"><label>Thumbnail Image URL</label><input type="url" id="wp-image" placeholder="https://..." oninput="AdminApp.previewWatchImg(this.value)"></div>
+    <div class="form-group"><label>OR Upload Video File</label>
+      <input type="file" id="wp-video-file" accept="video/*" style="display:none" onchange="AdminApp.handleVideoUpload(this)">
+      <button class="btn btn-ghost btn-outline btn-block" onclick="document.getElementById('wp-video-file').click()"><i class="fas fa-upload"></i> Choose Video File</button>
+      <div id="video-upload-status" style="font-size:.7rem;margin-top:.3rem;color:var(--muted)"></div>
+    </div>
     <img id="wp-img-preview" class="img-preview" alt="Preview">
     <div class="form-group" style="margin-top:.5rem"><label>Video / Watch URL</label><input type="url" id="wp-video" placeholder="https://youtube.com/watch?v=..."></div>
     <div class="form-row">

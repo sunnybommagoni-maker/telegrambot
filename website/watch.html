@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="css/responsive.css?v=3.0.0">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5388885815887025" crossorigin="anonymous"></script>
 
 <!-- Ad Scripts -->
 <script>
@@ -269,7 +270,7 @@ function renderFeatured(posts) {
     sec.style.display = 'block';
     const p = featuredArr[0];
     card.innerHTML = `
-      <a href="${esc(p.video_url)}" target="_blank" class="featured-card" style="text-decoration:none;color:inherit">
+      <a href="player.html?id=${esc(p._id)}" class="featured-card" style="text-decoration:none;color:inherit">
         <div class="featured-thumb">
           ${p.image
             ? `<img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'${noImgClass(0)} thumb-placeholder\\'>📺</div>'">`
@@ -308,7 +309,7 @@ function renderGrid(posts) {
     if (filtered.length === 0) { empty.style.display = 'block'; return; }
     grid.style.display = 'grid';
     grid.innerHTML = filtered.map((p, i) => `
-      <a href="${esc(p.video_url||'#')}" target="_blank" class="post-card" style="text-decoration:none;color:inherit">
+      <a href="player.html?id=${esc(p._id)}" class="post-card" style="text-decoration:none;color:inherit">
         <div class="post-thumb-wrap">
           ${p.image
             ? `<img class="post-thumb" src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'${noImgClass(i)} thumb-placeholder\\'>📺</div>'">`

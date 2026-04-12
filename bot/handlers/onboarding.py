@@ -136,9 +136,11 @@ async def user_returning(update: Update, context: ContextTypes.DEFAULT_TYPE):
         cfg = db.get_system_config()
         watch_enabled = cfg.get("watch_enabled", True)
         website_url   = cfg.get("website_url", "https://chatting-app-ae637.web.app")
+        watch_url     = cfg.get("watch_shortlink") or f"{website_url}/watch.html"
     except Exception:
         watch_enabled = True
         website_url   = "https://chatting-app-ae637.web.app"
+        watch_url     = f"{website_url}/watch.html"
 
     welcome_back_msg = (
         f"👋 *Welcome Back, {user.first_name}!*\n"
@@ -149,22 +151,20 @@ async def user_returning(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "What would you like to do?"
     )
     if watch_enabled:
-        welcome_back_msg += f"\n\n📺 *New:* Watch videos & earn rewards → [Watch Now]({website_url}/watch.html)"
-
-    from utils.keyboards import main_menu_keyboard
+        welcome_back_msg += f"\n\n📺 *New:* Watch videos & earn rewards → [Watch Now]({watch_url})"
 
     if update.callback_query:
         await update.callback_query.edit_message_text(
             welcome_back_msg,
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard(watch_enabled),
+            reply_markup=main_menu_keyboard(watch_enabled, watch_url),
             disable_web_page_preview=True
         )
     else:
         await update.message.reply_text(
             welcome_back_msg,
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard(watch_enabled),
+            reply_markup=main_menu_keyboard(watch_enabled, watch_url),
             disable_web_page_preview=True
         )
 

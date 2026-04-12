@@ -37,18 +37,26 @@ const AdminApp = {
 
     // ── INIT ──────────────────────────────
     init() {
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                this.user = user;
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('admin-email-tag').textContent = user.email;
-                this.startAllListeners();
-                toast('✅ Welcome back!', 'success');
-            } else {
-                this.user = null;
-                document.getElementById('login-overlay').style.display = 'flex';
-            }
-        });
+        try {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    this.user = user;
+                    const loginOverlay = document.getElementById('login-overlay');
+                    if (loginOverlay) loginOverlay.style.display = 'none';
+                    const emailTag = document.getElementById('admin-email-tag');
+                    if (emailTag) emailTag.textContent = user.email;
+                    this.startAllListeners();
+                    toast('✅ Welcome back!', 'success');
+                } else {
+                    this.user = null;
+                    const loginOverlay = document.getElementById('login-overlay');
+                    if (loginOverlay) loginOverlay.style.display = 'flex';
+                }
+            });
+        } catch (e) {
+            console.error('Init Error:', e);
+            toast('❌ Critical Error: ' + e.message, 'error');
+        }
     },
 
     // ── AUTH ──────────────────────────────
@@ -500,6 +508,33 @@ const AdminApp = {
         else { prev.style.display = 'none'; }
     },
 
+    async handleVideoUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const statusEl = document.getElementById('video-upload-status');
+        statusEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading ${file.name}...`;
+        try {
+            const storageRef = firebase.storage().ref(`videos/${Date.now()}_${file.name}`);
+            const task = storageRef.put(file);
+            task.on('state_changed', 
+                snap => {
+                    const pct = (snap.bytesTransferred / snap.totalBytes * 100).toFixed(0);
+                    statusEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading: ${pct}%`;
+                },
+                err => { throw err; },
+                async () => {
+                    const url = await storageRef.getDownloadURL();
+                    document.getElementById('wp-video').value = url;
+                    statusEl.innerHTML = `<span style="color:var(--success)">✅ Upload Complete!</span>`;
+                    toast('📺 Video uploaded and linked!', 'success');
+                }
+            );
+        } catch (e) {
+            statusEl.innerHTML = `<span style="color:var(--danger)">❌ Upload Failed</span>`;
+            toast('❌ Upload error: ' + e.message, 'error');
+        }
+    },
+
     async saveWatchPost() {
         const title = document.getElementById('wp-title')?.value.trim();
         const desc  = document.getElementById('wp-desc')?.value.trim();
@@ -517,6 +552,7 @@ const AdminApp = {
             // clear
             ['wp-title','wp-desc','wp-image','wp-video'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
             document.getElementById('wp-img-preview').style.display = 'none';
+            document.getElementById('video-upload-status').innerHTML = '';
             this.pushActivity(`📺 New watch post: "${title}"`, '#6366f1');
         } catch(e) { toast('❌ ' + e.message, 'error'); }
     },
@@ -706,6 +742,7 @@ const AdminApp = {
             setVal('cfg-maintenance-msg', cfg.maintenance_message || '');
             setVal('cfg-welcome-msg', cfg.welcome_message || '');
             setVal('cfg-admin-ids', (cfg.admin_ids || []).join(','));
+            setVal('cfg-watch-shortlink', cfg.watch_shortlink || '');
         } catch(e) { console.error('Settings load error:', e); }
     },
 
@@ -729,6 +766,7 @@ const AdminApp = {
             maintenance_message: document.getElementById('cfg-maintenance-msg')?.value.trim() || '',
             welcome_message:     document.getElementById('cfg-welcome-msg')?.value.trim() || '',
             admin_ids:           (document.getElementById('cfg-admin-ids')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
+            watch_shortlink:     document.getElementById('cfg-watch-shortlink')?.value.trim() || '',
             last_updated:        Date.now(),
             updated_by:          this.user?.email || 'admin'
         };

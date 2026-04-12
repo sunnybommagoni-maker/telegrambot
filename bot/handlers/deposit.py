@@ -154,10 +154,13 @@ async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Notify admin
     try:
+        # Escape username for Markdown
+        safe_username = username.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`") if username else "Unknown"
+        
         admin_msg = (
             f"💳 *New Deposit Verification Required*\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"👤 User: @{username}\n"
+            f"👤 User: @{safe_username}\n"
             f"🆔 ID: `{user_id}`\n"
             f"💰 Amount: ₹{DEPOSIT_AMOUNT}\n"
             f"⏰ Time: {time.strftime('%H:%M:%S')}\n\n"
@@ -249,24 +252,31 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "timestamp": int(time.time())
         })
         
-        # Update admin message
-        # Use safe caption fallback to prevent NoneType + str error
-        current_caption = query.message.caption or "📸 Deposit Verification Request"
-        await query.message.edit_caption(
-            caption=current_caption + "\n\n✅ *APPROVED*",
-            parse_mode="Markdown"
-        )
-        await query.message.edit_reply_markup(reply_markup=None)
+        # Update admin message safely
+        try:
+            current_caption = query.message.caption or "📸 Deposit Verification Request"
+            # Add status without re-parsing original markdown if possible, or use HTML
+            await query.message.edit_caption(
+                caption=current_caption + "\n\n✅ APPROVED",
+                # Omit parse_mode to keep original style or prevent re-parse errors
+            )
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception as e:
+            logger.error(f"⚠️ Could not update admin message UI: {e}")
         
         # Notify user
         try:
-            username = user.get("username")
+            cfg = db.get_system_config()
+            watch_enabled = cfg.get("watch_enabled", True)
+            website_url   = cfg.get("website_url", "https://chatting-app-ae637.web.app")
+            watch_url     = cfg.get("watch_shortlink") or f"{website_url}/watch.html"
+
             notify_msg = (
-                f"✅ *Account Activated!*\n"
+                f"✅ <b>Account Activated!</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"💰 Deposit Received: ₹{DEPOSIT_AMOUNT}\n"
                 f"🎁 Welcome Bonus: ₹20\n"
-                f"= Total Balance: ₹{new_balance}\n\n"
+                f"= Total Balance: <b>₹{new_balance}</b>\n\n"
                 f"🎉 Your account is now ACTIVE!\n"
                 f"Start earning tasks, complete referrals, and withdraw anytime.\n\n"
                 f"Let's earn! 💪"
@@ -275,8 +285,8 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(
                 chat_id=user_id,
                 text=notify_msg,
-                parse_mode="Markdown",
-                reply_markup=main_menu_keyboard()
+                parse_mode="HTML",
+                reply_markup=main_menu_keyboard(watch_enabled, watch_url)
             )
         except Exception as e:
             logger.error(f"❌ Could not notify user: {e}")

@@ -5,10 +5,11 @@ Updated: Added Watch button + dynamic config-aware menus
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def main_menu_keyboard(watch_enabled: bool = True):
+def main_menu_keyboard(watch_enabled: bool = True, watch_url: str = "https://chatting-app-ae637.web.app/watch.html"):
     """
     Main menu with 6 core commands: Earn, Deposit, Wallet, Profile, Withdraw, Watch
     watch_enabled: read from system_config in Firebase — controlled via Admin Panel
+    watch_url: dynamic link (could be a shortlink like ShrinkEarn) to drive revenue
     """
     rows = [
         [
@@ -25,7 +26,7 @@ def main_menu_keyboard(watch_enabled: bool = True):
     ]
     if watch_enabled:
         rows.append([
-            InlineKeyboardButton("📺 Watch & Earn", url="https://chatting-app-ae637.web.app/watch.html"),
+            InlineKeyboardButton("📺 Watch & Earn", url=watch_url),
         ])
     return InlineKeyboardMarkup(rows)
 
