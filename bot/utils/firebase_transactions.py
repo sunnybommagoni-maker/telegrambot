@@ -49,7 +49,7 @@ def atomic_add_balance(user_id: int, amount: float) -> float:
         return 0
 
 
-def process_task_completion(user_id: int, task_id: str) -> dict:
+async def process_task_completion(user_id: int, task_id: str, bot=None) -> dict:
     """
     Process task completion with earning and referral bonus check.
     Returns: {success: bool, message: str, new_balance: float}
@@ -79,8 +79,8 @@ def process_task_completion(user_id: int, task_id: str) -> dict:
         db.reference(f"users/{user_id}/earnings/total_earned").set(total_earned + TASK_COMPLETION_REWARD)
         
         # Check for referral bonus trigger (25 tasks completed)
-        if new_tasks_count == REFERRAL_TASK_THRESHOLD:
-            check_and_award_referral_bonus(user_id)
+        if new_tasks_count >= REFERRAL_TASK_THRESHOLD:
+            await check_and_award_referral_bonus(user_id, bot)
         
         return {
             "success": True,
@@ -92,9 +92,10 @@ def process_task_completion(user_id: int, task_id: str) -> dict:
         return {"success": False, "message": f"❌ Error: {str(e)}"}
 
 
-def check_and_award_referral_bonus(referred_user_id: int):
+async def check_and_award_referral_bonus(referred_user_id: int, bot=None):
     """
     Check if referred user completed 25 tasks and award bonuses automatically.
+    Unified Schema: referred_by is at users/{user_id}/referrals/referred_by
     Awards:
     - ₹100 to referrer
     - ₹20 to referred user
@@ -104,12 +105,15 @@ def check_and_award_referral_bonus(referred_user_id: int):
         if not referred_user:
             return
         
-        referrer_id = referred_user.get("referrals", {}).get("referred_by")
+        # Unified path check
+        referrals = referred_user.get("referrals", {})
+        referrer_id = referrals.get("referred_by")
+        
         if not referrer_id:
             return  # No referrer
         
         # Check if bonus already awarded
-        if referred_user.get("referrals", {}).get("bonus_awarded"):
+        if referrals.get("bonus_awarded"):
             return  # Bonus already awarded
         
         # Award bonus to referrer
@@ -124,7 +128,7 @@ def check_and_award_referral_bonus(referred_user_id: int):
             referrer_ref_bonus + REFERRAL_BONUS_REFERRER
         )
         
-        # Award bonus to referred user (new user)
+        # Award bonus to referred user (friend)
         referred_new_balance = referred_user.get("balance", 0) + REFERRAL_BONUS_REFERRED
         db.reference(f"users/{referred_user_id}/balance").set(referred_new_balance)
         
@@ -149,6 +153,25 @@ def check_and_award_referral_bonus(referred_user_id: int):
         
         print(f"✅ Referral bonus awarded: {referrer_id} (+₹{REFERRAL_BONUS_REFERRER}), {referred_user_id} (+₹{REFERRAL_BONUS_REFERRED})")
         
+        # Notifications
+        if bot:
+            username = referred_user.get("username", "A friend")
+            try:
+                # To Referrer
+                await bot.send_message(
+                    chat_id=referrer_id,
+                    text=f"🎁 *Referral Bonus Awarded!*\n\nYour friend *{username}* has completed 25 tasks.\n💰 *+₹{REFERRAL_BONUS_REFERRER}* added to your wallet!",
+                    parse_mode="Markdown"
+                )
+                # To Referred User
+                await bot.send_message(
+                    chat_id=referred_user_id,
+                    text=f"🎁 *Referral Bonus Awarded!*\n\nSince you joined via an invite and completed 25 tasks, you've earned a special bonus!\n💰 *+₹{REFERRAL_BONUS_REFERRED}* added to your wallet!",
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                print(f"⚠️ Could not send referral bonus notifications: {e}")
+                
     except Exception as e:
         print(f"❌ Error awarding referral bonus: {e}")
 

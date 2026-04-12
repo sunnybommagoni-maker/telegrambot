@@ -1,95 +1,72 @@
 """
-Referral Handler - Phase 6  
-Display referral code and referral statistics
-Bonus distribution happens automatically via process_task_completion()
+Referral Handler
+Manages the /refer command and referral statistics display.
 """
-import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 import services.firebase as db
-from utils.referral_manager import get_referral_code, get_referral_statistics, get_all_referrals
-from utils.keyboards import main_menu_keyboard
+from utils.referral_manager import get_referral_statistics
+from config import WEBSITE_BASE_URL, REFERRAL_BONUS_REFERRER
 
-logger = logging.getLogger(__name__)
-
-
-async def referral_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Display referral code and sharing instructions"""
-    user_id = update.effective_user.id
-    user = db.get_user(user_id)
-    
+async def refer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Shows referral stats and sharing options.
+    """
+    user = update.effective_user
     if not user:
-        await update.message.reply_text("❌ User not found", reply_markup=main_menu_keyboard())
         return
+
+    user_id = user.id
+    user_data = db.get_user(user_id)
     
-    # Get or generate referral code
-    referral_code = get_referral_code(user_id)
+    if not user_data:
+        return # Should not happen if registered
+
+    referrals = user_data.get("referrals", {})
+    code = referrals.get("referral_code", "N/A")
+    
+    # Get stats
     stats = get_referral_statistics(user_id)
+    total = stats.get("total_referred", 0)
+    active = stats.get("active_referrals", 0)
+    potential = stats.get("potential_earnings", 0)
     
-    ref_info = (
-        f"👥 *Your Referral Code*\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🔗 Your Code: `{referral_code}`\n\n"
+    # Sharing Link
+    bot_username = (await context.bot.get_me()).username
+    invite_link = f"https://t.me/{bot_username}?start={code}"
+    share_url = f"https://t.me/share/url?url={invite_link}&text=Join%20Surface%20Hub%20and%20start%20earning%20real%20cash!%20💰"
+
+    msg = (
+        "👥 *Refer & Earn System*\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🎁 *Reward:* Earn ₹{REFERRAL_BONUS_REFERRER} for every friend who joins and completes 25 tasks!\n\n"
         
-        f"📊 *Referral Stats:*\n"
-        f"👫 Total Referred: {stats.get('total_referred', 0)}\n"
-        f"✅ Active Friends: {stats.get('active_referrals', 0)}\n"
-        f"🏷️  Pending: {stats.get('pending_referrals', 0)}\n"
-        f"🎁 Qualified (25 tasks): {stats.get('qualified_for_bonus', 0)}\n"
-        f"💰 Bonus Awarded: {'Yes ✅' if stats.get('bonus_awarded') else 'No'}\n\n"
+        f"📊 *Your Statistics:*\n"
+        f"• Total Referrals: `{total}`\n"
+        f"• Active (Deposited): `{active}`\n"
+        f"• Potential Earnings: `₹{potential}`\n\n"
         
-        f"💵 *Earnings:*\n"
-        f"Potential Earnings: ₹{stats.get('potential_earnings', 0)}\n\n"
-        
-        f"📢 *How to Share:*\n"
-        f"Send this link to friends:\n"
-        f"`/start {referral_code}`\n\n"
-        
-        f"🎉 *Your friend gets ₹20 bonus*\n"
-        f"*You get ₹100 when they complete 25 tasks!*"
+        f"🔗 *Your Referral Link:*\n"
+        f"`{invite_link}`\n\n"
+        "Tap the button below to share with your friends and start earning!"
     )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📋 My Referrals", callback_data="referral_list")],
-        [InlineKeyboardButton("💎 Wallet", callback_data="btn_wallet")],
-        [InlineKeyboardButton("📋 Menu", callback_data="btn_start")]
-    ])
-    
-    if update.message:
-        await update.message.reply_text(ref_info, parse_mode="Markdown", reply_markup=keyboard)
-    else:
-        await update.callback_query.message.reply_text(ref_info, parse_mode="Markdown", reply_markup=keyboard)
 
+    keyboard = [
+        [InlineKeyboardButton("🚀 Share Invite Link", url=share_url)],
+        [InlineKeyboardButton("⬅️ Back to Menu", callback_data="btn_start")]
+    ]
 
-async def referral_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Display list of referred users with their status"""
-    query = update.callback_query
-    await query.answer()
-    
-    user_id = query.from_user.id
-    referrals = get_all_referrals(user_id)
-    
-    if not referrals:
-        list_msg = (
-            "😴 *No Referrals Yet*\n\n"
-            "Share your code with friends to earn ₹100 per referral!\n"
-            "They get ₹20 bonus when they join."
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            msg,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            disable_web_page_preview=True
         )
     else:
-        list_msg = f"👥 *Your Referrals ({len(referrals)})*\n━━━━━━━━━━━━━━━━━━━━\n\n"
-        
-        for ref in referrals:
-            status_icon = "✅" if ref["status"] == "active" else "⏳"
-            bonus_icon = "🎁" if ref["bonus_eligible"] else ""
-            
-            list_msg += (
-                f"{status_icon} @{ref['username']}\n"
-                f"   Tasks: {ref['tasks_completed']}/25 {bonus_icon}\n\n"
-            )
-    
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("👥 Back to Referral", callback_data="btn_profile")],
-        [InlineKeyboardButton("📋 Menu", callback_data="btn_start")]
-    ])
-    
-    await query.message.edit_text(list_msg, parse_mode="Markdown", reply_markup=keyboard)
+        await update.message.reply_text(
+            msg,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            disable_web_page_preview=True
+        )

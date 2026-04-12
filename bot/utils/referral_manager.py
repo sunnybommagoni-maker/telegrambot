@@ -11,31 +11,10 @@ import services.firebase as db
 
 def generate_referral_code(user_id: int, length: int = 8) -> str:
     """
-    Generate a unique referral code for the user.
-    Format: User-initiated or auto-generated code
+    Generate a unique referral code for the user using the db service.
     """
     try:
-        # Check if user already has referral code
-        user = db.get_user(user_id)
-        if user and user.get("referrals", {}).get("referral_code"):
-            return user["referrals"]["referral_code"]
-        
-        # Generate unique code
-        while True:
-            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-            # Check if code already exists
-            if not db.reference(f"referral_codes/{code}").get():
-                break
-        
-        # Store mapping
-        db.reference(f"users/{user_id}/referrals/referral_code").set(code)
-        db.reference(f"referral_codes/{code}").set(user_id)
-        
-        # Initialize referrals list
-        db.reference(f"users/{user_id}/referrals/referrals_list").set({})
-        
-        return code
-    
+        return db.create_referral_code(user_id)
     except Exception as e:
         print(f"❌ Error generating referral code: {e}")
         return None

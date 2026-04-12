@@ -198,7 +198,7 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
             
             # Process reward
-            reward_result = process_task_completion(user_id, verify_result.get("task_id"))
+            reward_result = await process_task_completion(user_id, verify_result.get("task_id"), context.bot)
             if reward_result.get("success"):
                 success_msg = (
                     "🎊 *HUB REWARD VERIFIED!*\n"

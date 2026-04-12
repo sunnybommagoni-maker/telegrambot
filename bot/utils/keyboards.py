@@ -17,10 +17,11 @@ def main_menu_keyboard(watch_enabled: bool = True, watch_url: str = "https://cha
             InlineKeyboardButton("💳 Deposit", callback_data="btn_deposit"),
         ],
         [
+            InlineKeyboardButton("👥 Refer & Earn", callback_data="btn_refer"),
             InlineKeyboardButton("💎 Wallet", callback_data="btn_wallet"),
-            InlineKeyboardButton("👤 Profile", callback_data="btn_profile"),
         ],
         [
+            InlineKeyboardButton("👤 Profile", callback_data="btn_profile"),
             InlineKeyboardButton("💸 Withdraw", callback_data="btn_withdraw"),
         ],
     ]

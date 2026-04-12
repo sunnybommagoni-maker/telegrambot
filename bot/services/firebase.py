@@ -70,9 +70,10 @@ def create_user(user_id: int, username: str, referred_by: int | None = None, ini
         "referrals": {
             "referral_code": None,
             "referred_count": 0,
-            "referrals_list": {}
+            "referrals_list": {},
+            "referred_by": referred_by,
+            "bonus_awarded": False
         },
-        "referred_by": referred_by,
         "join_date": int(time.time()),
         "banned": False,
     }
@@ -445,12 +446,17 @@ def get_referral_network(user_id: int) -> dict:
 
 
 def create_referral_code(user_id: int) -> str:
-    """Generate unique referral code for user"""
+    """Generate unique 8-character referral code for user"""
     import string
     import random
     
-    # Generate 6-char code
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    # Check if exists
+    user = get_user(user_id)
+    if user and user.get("referrals", {}).get("referral_code"):
+        return user["referrals"]["referral_code"]
+
+    # Generate 8-char code
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     
     db.reference(f"users/{user_id}/referrals/referral_code").set(code)
     db.reference(f"referral_codes/{code}").set(user_id)

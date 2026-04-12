@@ -22,6 +22,7 @@ from handlers.deposit import start_deposit, handle_screenshot, cancel_deposit, a
 from handlers.earn import earn_command
 from handlers.withdraw import withdraw_command, handle_amount, handle_upi, approve_withdrawal, reject_withdrawal, cancel_withdraw, WAITING_AMOUNT, WAITING_UPI
 from handlers.wallet_profile import wallet_command, profile_command
+from handlers.referral import refer_command
 from services.news_agent import autonomous_news_job
 
 # ════════════════════════════════════════════════════════════════
@@ -121,6 +122,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "btn_wallet":   wallet_command,
         "btn_profile":  profile_command,
         "btn_withdraw": withdraw_command,
+        "btn_refer":    refer_command,
         "btn_start":    start,
     }
 
@@ -205,6 +207,7 @@ async def post_init(application: Application):
     commands = [
         BotCommand("start",    "🚀 Main Menu"),
         BotCommand("earn",     "💰 Earn Money"),
+        BotCommand("refer",    "👥 Refer & Earn"),
         BotCommand("deposit",  "💳 Deposit"),
         BotCommand("wallet",   "💎 Check Wallet"),
         BotCommand("profile",  "👤 My Profile"),
@@ -283,6 +286,7 @@ def main():
     # 5. MAIN COMMANDS
     app.add_handler(CommandHandler("start",   start))
     app.add_handler(CommandHandler("earn",    earn_command))
+    app.add_handler(CommandHandler("refer",   refer_command))
     app.add_handler(CommandHandler("wallet",  wallet_command))
     app.add_handler(CommandHandler("profile", profile_command))
 
