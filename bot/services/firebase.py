@@ -63,17 +63,23 @@ def create_user(user_id: int, username: str, referred_by: int | None = None, ini
         "user_id": user_id,
         "username": username or f"user_{user_id}",
         "balance": initial_balance,
-        "ads_watched": 0,
-        "tasks_done": 0,
-        "offers_done": 0,
         "deposit_status": False,
+        "earnings": {
+            "tasks_completed": 0,
+            "tasks_earnings": 0,
+            "referral_bonus": 0,
+            "total_earned": 0
+        },
         "referrals": {
             "referral_code": None,
             "referred_count": 0,
             "referrals_list": {},
             "referred_by": referred_by,
-            "bonus_awarded": False
+            "bonus_awarded": False,
+            "bonus_given": {}
         },
+        "tasks_completed": {},
+        "withdrawals": {},
         "join_date": int(time.time()),
         "banned": False,
     }
@@ -83,20 +89,48 @@ def create_user(user_id: int, username: str, referred_by: int | None = None, ini
 def update_user(user_id: int, data: dict):
     db.reference(f"users/{user_id}").update(data)
 
-def update_balance(user_id: int, delta: float) -> float:
-    """Atomically increment user balance and return new balance."""
+def update_balance(user_id: int, delta: float, min_balance: float = None) -> float | None:
+    """
+    Atomically increment user balance using a transaction.
+    If min_balance is provided and the new balance would be lower, returns None.
+    """
     ref = db.reference(f"users/{user_id}/balance")
-    current = ref.get() or 0
-    new_balance = round(current + delta, 2)
-    ref.set(new_balance)
-    return new_balance
+    
+    def update_transaction(current_balance):
+        if current_balance is None:
+            current_balance = 0
+        new_val = round(current_balance + delta, 2)
+        if min_balance is not None and new_val < min_balance:
+            return None # Aborts transaction
+        return new_val
+        
+    result = ref.transaction(update_transaction)
+    return result
+
+def atomic_deduct_balance(user_id: int, amount: float) -> bool:
+    """
+    Atomically deduct balance using a transaction with insufficient funds check.
+    """
+    try:
+        new_balance = update_balance(user_id, -amount, min_balance=0)
+        return new_balance is not None
+    except Exception as e:
+        print(f"❌ Error deducting balance: {e}")
+        return False
 
 def get_all_users() -> dict:
     return db.reference("users").get() or {}
 
 def get_all_user_ids() -> list[int]:
-    users = get_all_users()
-    return list(users.keys()) if users else []
+    """Retrieves all user IDs from the database, skipping non-numeric keys."""
+    users = db.reference("users").get() or {}
+    uids = []
+    for k in users.keys():
+        try:
+            uids.append(int(k))
+        except (ValueError, TypeError):
+            continue
+    return uids
 
 # ════════════════════════════════════════════════════════════════
 #  DEPOSIT FUNCTIONS
@@ -250,24 +284,8 @@ def credit_referral(referrer_id: int, reward: float):
 # ════════════════════════════════════════════════════════════════
 
 def get_stats() -> dict:
-    users = get_all_users()
-    total_users = len(users)
-    total_balance = sum(u.get("balance", 0) for u in users.values())
-    total_ads = sum(u.get("ads_watched", 0) for u in users.values())
-    total_tasks = sum(u.get("tasks_done", 0) for u in users.values())
-    deposited = sum(1 for u in users.values() if u.get("deposit_status"))
-    withdraws = get_all_withdraws()
-    total_withdrawn = sum(
-        w.get("amount", 0) for w in withdraws.values() if w.get("status") == "completed"
-    )
-    return {
-        "total_users": total_users,
-        "deposited_users": deposited,
-        "total_balance_in_system": round(total_balance, 2),
-        "total_ads_watched": total_ads,
-        "total_tasks_done": total_tasks,
-        "total_withdrawn": round(total_withdrawn, 2),
-    }
+    """Historical/Main statistics wrapper - points to the comprehensive earnings dashboard."""
+    return get_earnings_dashboard()
 
 # ════════════════════════════════════════════════════════════════
 #  BROADCAST FUNCTIONS (WEB SYNC)
@@ -290,16 +308,6 @@ def add_broadcast_from_web(message: str, image: str = None, link: str = None, li
         "target": "all"
     })
 
-def get_all_user_ids() -> list[int]:
-    """Retrieves all user IDs from the database, skipping non-numeric keys."""
-    users = db.reference("users").get() or {}
-    uids = []
-    for k in users.keys():
-        try:
-            uids.append(int(k))
-        except (ValueError, TypeError):
-            continue
-    return uids
 
 # ════════════════════════════════════════════════════════════════
 #  CONTENT / NEWS FUNCTIONS

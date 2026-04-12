@@ -37,11 +37,8 @@ async def welcome_new_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"⚠️ Error parsing referral code: {e}")
     
-    # Create user in database
+    # Create user in database (now initializes full new schema automatically)
     db.create_user(user_id, username, referred_by=referred_by)
-    
-    # Migrate to new earning system schema
-    migrate_user_to_new_schema(user_id)
     
     # If has referrer, validate and link
     if referred_by:

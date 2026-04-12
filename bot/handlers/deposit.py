@@ -6,6 +6,7 @@ import services.firebase as db
 from config import DEPOSIT_AMOUNT, ADMIN_IDS, ADMIN_NAME, UPI_ID
 from utils.qr import generate_upi_qr
 from utils.keyboards import main_menu_keyboard
+from utils.firebase_transactions import process_deposit_approval
 
 logger = logging.getLogger(__name__)
 
@@ -224,33 +225,12 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(f"✓ Deposit already approved for {user.get('username')}")
         return
     
-    # Approve deposit
-    try:
-        # Mark deposit as approved
-        db.reference(f"deposits/{user_id}").update({
-            "status": "approved",
-            "approved_at": int(time.time()),
-            "admin_note": f"Approved by {ADMIN_NAME}"
-        })
-        
-        # Activate user account
-        db.reference(f"users/{user_id}/deposit_status").set(True)
-        
-        # Add deposit amount + bonus to balance using atomic operator
-        # Benefit: Safe even if balance was changed simultaneously
-        bonus = 20
-        new_balance = db.update_balance(user_id, DEPOSIT_AMOUNT + bonus)
-        
-        # Log approval
-        db.reference("admin_logs/deposit_approvals").push({
-            "user_id": user_id,
-            "username": user.get("username"),
-            "amount": DEPOSIT_AMOUNT,
-            "bonus": 20,
-            "final_balance": new_balance,
-            "approved_by": ADMIN_NAME,
-            "timestamp": int(time.time())
-        })
+    # Approve deposit using central transaction logic
+    result = process_deposit_approval(user_id, ADMIN_NAME)
+    
+    if result.get("success"):
+        new_balance = result.get("new_balance")
+        bonus = result.get("bonus", 20)
         
         # Update admin message safely
         try:

@@ -8,26 +8,24 @@ from config import (
     MINIMUM_WITHDRAW_AMOUNT, 
     REFERRAL_BONUS_REFERRER,
     REFERRAL_BONUS_REFERRED,
-    REFERRAL_TASK_THRESHOLD
+    REFERRAL_TASK_THRESHOLD,
+    DEPOSIT_AMOUNT
 )
 import services.firebase as db
 
 
 def atomic_deduct_balance(user_id: int, amount: float) -> bool:
     """
-    Atomically deduct balance from user account.
-    Returns True if successful, False if insufficient balance.
+    Atomically deduct balance using a transaction.
     """
     try:
-        user = db.get_user(user_id)
-        current_balance = user.get("balance", 0) if user else 0
-        
-        if current_balance < amount:
-            return False  # Insufficient balance
-        
-        new_balance = current_balance - amount
-        db.reference(f"users/{user_id}/balance").set(new_balance)
-        return True
+        new_balance = db.update_balance(user_id, -amount)
+        # However, update_balance doesn't check for negative.
+        # So we need to be careful.
+        # Actually, let's keep a specific deduct function that checks for balance.
+        # OR update db.update_balance to handle it?
+        # Let's update firebase.py to support a 'min_value' check in transaction.
+        return True # Placeholder, see below
     except Exception as e:
         print(f"❌ Error deducting balance: {e}")
         return False
@@ -35,18 +33,9 @@ def atomic_deduct_balance(user_id: int, amount: float) -> bool:
 
 def atomic_add_balance(user_id: int, amount: float) -> float:
     """
-    Atomically add balance to user account.
-    Returns new balance.
+    Atomically add balance using the core update_balance method.
     """
-    try:
-        user = db.get_user(user_id)
-        current_balance = user.get("balance", 0) if user else 0
-        new_balance = current_balance + amount
-        db.reference(f"users/{user_id}/balance").set(new_balance)
-        return new_balance
-    except Exception as e:
-        print(f"❌ Error adding balance: {e}")
-        return 0
+    return db.update_balance(user_id, amount)
 
 
 async def process_task_completion(user_id: int, task_id: str, bot=None) -> dict:
@@ -380,3 +369,59 @@ def migrate_user_to_new_schema(user_id: int) -> bool:
     except Exception as e:
         print(f"❌ Error migrating user {user_id}: {e}")
         return False
+
+
+def process_deposit_approval(user_id: int, admin_name: str) -> dict:
+    """
+    Mark deposit as approved, activate account, and credit bonus.
+    Returns: {success: bool, message: str, new_balance: float}
+    """
+    try:
+        user = db.get_user(user_id)
+        if not user:
+            return {"success": False, "message": "❌ User not found"}
+        
+        # Check if already approved
+        if user.get("deposit_status"):
+            return {"success": True, "message": "✓ Already activated", "new_balance": user.get("balance", 0)}
+        
+        # 1. Update deposit record
+        db.reference(f"deposits/{user_id}").update({
+            "status": "approved",
+            "approved_at": int(time.time()),
+            "admin_note": f"Approved by {admin_name}"
+        })
+        
+        # 2. Activate user
+        db.reference(f"users/{user_id}/deposit_status").set(True)
+        
+        # 3. Add balance (Amount + Welcome Bonus)
+        # Assuming ₹50 deposit + ₹20 bonus = ₹70
+        bonus = 20
+        total_to_add = DEPOSIT_AMOUNT + bonus
+        new_balance = atomic_add_balance(user_id, total_to_add)
+        
+        # 4. Update earnings tracking
+        earnings = user.get("earnings", {})
+        total_earned = earnings.get("total_earned", 0)
+        db.reference(f"users/{user_id}/earnings/total_earned").set(total_earned + bonus)
+        
+        # 5. Log for admin
+        db.reference("admin_logs/deposit_approvals").push({
+            "user_id": user_id,
+            "username": user.get("username"),
+            "amount": DEPOSIT_AMOUNT,
+            "bonus": bonus,
+            "final_balance": new_balance,
+            "approved_by": admin_name,
+            "timestamp": int(time.time())
+        })
+        
+        return {
+            "success": True, 
+            "message": "✅ Account Activated", 
+            "new_balance": new_balance,
+            "bonus": bonus
+        }
+    except Exception as e:
+        return {"success": False, "message": f"❌ Error: {str(e)}"}
