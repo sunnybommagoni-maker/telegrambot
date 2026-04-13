@@ -23,8 +23,14 @@ async def refer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return # Should not happen if registered
 
     referrals = user_data.get("referrals", {})
-    code = referrals.get("referral_code", "N/A")
-    
+    if isinstance(referrals, (int, float)):
+        referrals = {"referred_count": int(referrals)}
+        
+    code = referrals.get("referral_code")
+    if not code:
+        from utils.referral_manager import get_referral_code
+        code = get_referral_code(user_id) or "N/A"
+
     # Get stats
     stats = get_referral_statistics(user_id)
     total = stats.get("total_referred", 0)

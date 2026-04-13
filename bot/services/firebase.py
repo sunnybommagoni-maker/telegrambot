@@ -53,7 +53,12 @@ reference = db.reference
 # ════════════════════════════════════════════════════════════════
 
 def get_user(user_id: int) -> dict | None:
-    return db.reference(f"users/{user_id}").get()
+    user = db.reference(f"users/{user_id}").get()
+    if user and "referrals" in user:
+        # Schema Migration: Fix legacy int types to dict instantly
+        if isinstance(user["referrals"], (int, float)):
+            user["referrals"] = {"referred_count": int(user["referrals"])}
+    return user
 
 def user_exists(user_id: int) -> bool:
     return get_user(user_id) is not None
@@ -119,7 +124,12 @@ def atomic_deduct_balance(user_id: int, amount: float) -> bool:
         return False
 
 def get_all_users() -> dict:
-    return db.reference("users").get() or {}
+    users = db.reference("users").get() or {}
+    for uid, user in users.items():
+        if isinstance(user, dict) and "referrals" in user:
+            if isinstance(user["referrals"], (int, float)):
+                user["referrals"] = {"referred_count": int(user["referrals"])}
+    return users
 
 def get_all_user_ids() -> list[int]:
     """Retrieves all user IDs from the database, skipping non-numeric keys."""

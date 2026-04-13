@@ -24,8 +24,10 @@ def get_referral_code(user_id: int) -> str:
     """Get user's referral code, or generate if doesn't exist"""
     try:
         user = db.get_user(user_id)
-        if user and user.get("referrals", {}).get("referral_code"):
-            return user["referrals"]["referral_code"]
+        if user:
+            referrals = user.get("referrals", {})
+            if isinstance(referrals, dict) and referrals.get("referral_code"):
+                return referrals["referral_code"]
         
         # Generate if doesn't exist
         return generate_referral_code(user_id)
