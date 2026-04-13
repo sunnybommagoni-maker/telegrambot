@@ -103,12 +103,17 @@ class AIAgent:
             return logger.warning("No search results found.")
 
         # 2. Process each result
+        categories = ["Blogs", "Videos", "Games", "Records"]
+        cat_idx = 0
+        
         for entry in results:
             url = entry.get('url')
             title_input = entry.get('title')
             snippet = entry.get('body')
+            forced_category = categories[cat_idx % len(categories)]
+            cat_idx += 1
             
-            logger.info(f"📰 Processing: {title_input}")
+            logger.info(f"📰 Processing: {title_input} -> Targeting Page: {forced_category}")
             
             # Generate detailed article
             prompt = f"""
@@ -120,14 +125,13 @@ class AIAgent:
             2. Summary: 2-line high-impact summary.
             3. Content: 5-6 paragraphs of detailed analysis. 
             4. AD INJECTION: Place the exact marker [AD_SLOT] after the 2nd paragraph and after the 4th paragraph.
-            5. Category: Choose one from [Blogs, Videos, Games, Records].
+            5. Category Theme: Write this article with a subtle focus that fits the [{forced_category}] category.
             
             OUTPUT FORMAT (JSON ONLY):
             {{
                 "title": "Headline",
                 "summary": "2-line summary",
-                "content": "Full article with [AD_SLOT] placeholders",
-                "category": "Chosen Category"
+                "content": "Full article with [AD_SLOT] placeholders"
             }}
             """
             
@@ -145,23 +149,23 @@ class AIAgent:
                 
                 # 3. Ensure Ad Slots exist (Fail-Safe)
                 data = json.loads(json_str)
-                final_content = self.fix_ad_slots(data["content"])
+                final_content = self.fix_ad_slots(data.get("content", ""))
 
                 # 4. Publish to Firebase
                 # For images, we try to use a placeholder or the snippet context
-                image_tag = data.get("category", "tech").lower()
-                image_url = f"https://source.unsplash.com/1200x800/?{image_tag}"
+                image_tag = forced_category.lower()
+                image_url = f"https://source.unsplash.com/1200x800/?{image_tag},tech"
                 
                 content_id = add_content(
-                    title=data["title"],
-                    summary=data["summary"],
-                    category=data["category"],
+                    title=data.get("title", title_input),
+                    summary=data.get("summary", snippet[:100]),
+                    category=forced_category,
                     image=image_url,
                     url=url,
                     content=final_content
                 )
                 
-                logger.info(f"✅ AI Published Content: {content_id}")
+                logger.info(f"✅ AI Published Content ({forced_category}): {content_id}")
                 
             except Exception as e:
                 logger.error(f"JSON Parsing failed for response: {e}")
