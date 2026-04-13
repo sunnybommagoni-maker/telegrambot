@@ -273,9 +273,9 @@ async def approve_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         logger.info(f"✅ Deposit approved for {user_id} by {ADMIN_NAME}")
         
-    except Exception as e:
-        logger.error(f"❌ Error approving deposit: {e}")
-        await query.message.reply_text(f"❌ Error: {str(e)}")
+    else:
+        logger.error(f"❌ Error approving deposit: {result.get('message')}")
+        await query.message.reply_text(f"❌ Error: {result.get('message')}")
 
 
 async def reject_deposit(update: Update, context: ContextTypes.DEFAULT_TYPE):

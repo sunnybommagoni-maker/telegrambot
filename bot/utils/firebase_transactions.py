@@ -16,19 +16,9 @@ import services.firebase as db
 
 def atomic_deduct_balance(user_id: int, amount: float) -> bool:
     """
-    Atomically deduct balance using a transaction.
+    Atomically deduct balance. Points to core firebase.py implementation.
     """
-    try:
-        new_balance = db.update_balance(user_id, -amount)
-        # However, update_balance doesn't check for negative.
-        # So we need to be careful.
-        # Actually, let's keep a specific deduct function that checks for balance.
-        # OR update db.update_balance to handle it?
-        # Let's update firebase.py to support a 'min_value' check in transaction.
-        return True # Placeholder, see below
-    except Exception as e:
-        print(f"❌ Error deducting balance: {e}")
-        return False
+    return db.atomic_deduct_balance(user_id, amount)
 
 
 def atomic_add_balance(user_id: int, amount: float) -> float:
