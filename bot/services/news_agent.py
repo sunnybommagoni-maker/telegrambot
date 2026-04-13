@@ -32,13 +32,17 @@ class ModelRotator:
         while attempts > 0:
             try:
                 model = self.get_current_model()
-                response = self.client.text_generation(
-                    prompt=f"<s>[INST] {system_message} {prompt} [/INST]</s>",
+                messages = [
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ]
+                response = self.client.chat_completion(
+                    messages=messages,
                     model=model,
-                    max_new_tokens=1500,
+                    max_tokens=1500,
                     temperature=0.7,
                 )
-                return response
+                return response.choices[0].message.content
             except Exception as e:
                 logger.error(f"❌ Error with model {self.get_current_model()}: {e}")
                 self.rotate()
