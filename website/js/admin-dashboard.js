@@ -94,18 +94,33 @@ function loadDashboardData() {
         let totalReferrals = 0;
         let referralBonusTotal = 0;
         
+        // Wipe old user activity
+        window.dashboardActivities = window.dashboardActivities.filter(a => a.type !== 'user');
+
         snapshot.forEach((userSnapshot) => {
             const user = userSnapshot.val();
             if (!user) return;
             users.push(user);
             
+            // Generate Activity Feed Log if user joined recently
+            if (user.joined_date) {
+                // Approximate timestamp if joined_date is ISO. E.g., "2026-04-10T..."
+                const ts = new Date(user.joined_date).getTime();
+                if (!isNaN(ts)) {
+                    window.dashboardActivities.push({
+                        type: 'user',
+                        timestamp: ts,
+                        text: `👤 New user joined: User ${userSnapshot.key}`
+                    });
+                }
+            }
+
             // Check for verification/activation status
             if (user.deposit_status === 'approved' || user.activated) {
                 activeUsers.push(user);
             }
             
             const earnings = user.earnings || {};
-            // Use balance if total_earned is not available (common in some bot versions)
             const userTotal = earnings.total_earned || user.balance || 0;
             totalEarnings += userTotal;
             totalTasks += (earnings.tasks_completed || 0);
@@ -124,6 +139,8 @@ function loadDashboardData() {
         document.getElementById('avg-tasks').textContent = (users.length > 0 ? (totalTasks / users.length).toFixed(1) : 0);
         document.getElementById('total-referrals').textContent = totalReferrals;
         document.getElementById('referral-bonus').textContent = `₹${referralBonusTotal}`;
+
+        window.refreshFeed();
     });
     
     // Load deposits
@@ -131,18 +148,32 @@ function loadDashboardData() {
         let approved = 0;
         let pending = 0;
         
+        window.dashboardActivities = window.dashboardActivities.filter(a => a.type !== 'deposit');
+
         snapshot.forEach((userSnapshot) => {
             const deposits = userSnapshot.val();
             if (deposits) {
                 Object.values(deposits).forEach(deposit => {
                     if (deposit.status === 'approved') approved++;
                     if (deposit.status === 'pending') pending++;
+                    
+                    if (deposit.timestamp) {
+                        const ts = typeof deposit.timestamp === 'string' ? new Date(deposit.timestamp).getTime() : deposit.timestamp;
+                        if (!isNaN(ts)) {
+                            window.dashboardActivities.push({
+                                type: 'deposit',
+                                timestamp: ts,
+                                text: `🏦 Deposit ${deposit.status.toUpperCase()} - ₹${deposit.amount}`
+                            });
+                        }
+                    }
                 });
             }
         });
         
         document.getElementById('deposits-approved').textContent = approved;
         document.getElementById('deposits-pending').textContent = pending;
+        window.refreshFeed();
     });
     
     // Load withdrawals
@@ -150,39 +181,65 @@ function loadDashboardData() {
         let approved = 0;
         let totalAmount = 0;
         
+        window.dashboardActivities = window.dashboardActivities.filter(a => a.type !== 'withdrawal');
+
         snapshot.forEach((withdrawalSnapshot) => {
             const withdrawal = withdrawalSnapshot.val();
             if (withdrawal.status === 'approved' || withdrawal.status === 'processed') {
                 approved++;
                 totalAmount += withdrawal.amount;
             }
+            
+            if (withdrawal.timestamp) {
+                const ts = typeof withdrawal.timestamp === 'string' ? new Date(withdrawal.timestamp).getTime() : withdrawal.timestamp * 1000;
+                if (!isNaN(ts)) {
+                    window.dashboardActivities.push({
+                        type: 'withdrawal',
+                        timestamp: ts,
+                        text: `💸 Withdrawal ${withdrawal.status.toUpperCase()} - ₹${withdrawal.amount}`
+                    });
+                }
+            }
         });
         
         document.getElementById('withdrawals-approved').textContent = approved;
         document.getElementById('withdrawal-amount').textContent = `₹${totalAmount.toFixed(2)}`;
+        window.refreshFeed();
     });
     
     // Load recent activity
     updateActivityFeed();
 }
 
+// Global activities array populated by live listeners
+window.dashboardActivities = [];
+
 // Update recent activity feed
 function updateActivityFeed() {
-    const activities = [
-        '✅ User deposit approved',
-        '💸 Withdrawal request created',
-        '🎯 Task completed',
-        '🤝 Referral bonus awarded',
-        '👤 New user registered'
-    ];
-    
     const feedEl = document.getElementById('activity-feed');
-    feedEl.innerHTML = activities.map(activity => `
+    if (!feedEl) return;
+
+    if (window.dashboardActivities.length === 0) {
+        feedEl.innerHTML = '<div class="activity-item"><span class="action">No recent activity detected.</span></div>';
+        return;
+    }
+
+    // Sort descending (newest first) and take top 10
+    const sorted = window.dashboardActivities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+    
+    feedEl.innerHTML = sorted.map(activity => `
         <div class="activity-item">
-            <span class="timestamp">${new Date().toLocaleTimeString('en-IN')}</span>
-            <span class="action">${activity}</span>
+            <span class="timestamp">${new Date(activity.timestamp).toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</span>
+            <span class="action">${activity.text}</span>
         </div>
     `).join('');
 }
+
+// Debounce helper to prevent feed flashing
+let feedTimeout;
+window.refreshFeed = function() {
+    clearTimeout(feedTimeout);
+    feedTimeout = setTimeout(updateActivityFeed, 500);
+};
 
 export { loadDashboardData };

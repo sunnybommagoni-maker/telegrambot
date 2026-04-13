@@ -1,6 +1,7 @@
 import httpx
 import logging
-from config import SHRINKEARN_API_KEY
+import urllib.parse
+from config import SHRINKEARN_API_KEY, WEBSITE_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -9,12 +10,17 @@ async def shorten_link(tracking_url: str, user_id: int, ad_id: str = "") -> str:
     Returns the tracking URL wrapped in a ShrinkEarn shortlink explicitly.
     Highest paying CPM network substitution.
     """
+    
+    # TRIPLE FUNNEL: Wrap the final destination into our Adsterra Verify Interstitial
+    encoded_dest = urllib.parse.quote(tracking_url, safe='')
+    interstitial_url = f"{WEBSITE_BASE_URL}/verify.html?dest={encoded_dest}"
+
     if not SHRINKEARN_API_KEY or SHRINKEARN_API_KEY == "YOUR_SHRINKEARN_API_KEY":
-        logger.warning("SHRINKEARN_API_KEY is missing! Returning raw URL.")
-        return tracking_url
+        logger.warning("SHRINKEARN_API_KEY is missing! Returning Interstitial URL.")
+        return interstitial_url
 
     api_url = "https://shrinkearn.com/api"
-    params = {"api": SHRINKEARN_API_KEY, "url": tracking_url}
+    params = {"api": SHRINKEARN_API_KEY, "url": interstitial_url}
     
     try:
         async with httpx.AsyncClient(timeout=10) as client:
@@ -27,4 +33,4 @@ async def shorten_link(tracking_url: str, user_id: int, ad_id: str = "") -> str:
     except Exception as e:
         logger.error(f"ShrinkEarn shortener failed: {e}")
     
-    return tracking_url
+    return interstitial_url

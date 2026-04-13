@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surface Hub — Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --p:#3b82f6;--p2:#6366f1;--g:linear-gradient(135deg,#3b82f6,#6366f1);
+  --bg:#060810;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.07);
+  --muted:rgba(255,255,255,0.5);--success:#10b981;--warn:#f59e0b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem;}
+
+.glass-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    margin: 2rem auto;
+    backdrop-filter: blur(20px);
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--card);
+    border-top-color: var(--p);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+h1 { font-size: 2rem; margin-bottom: 0.5rem; background: var(--g); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+p { color: var(--muted); margin-bottom: 2rem; }
+
+.countdown-box {
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--warn);
+    margin: 2rem 0;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.action-btn {
+    background: var(--g);
+    color: #fff;
+    border: none;
+    padding: 1.2rem 3rem;
+    border-radius: 50px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s;
+    width: 100%;
+    opacity: 0.5;
+    pointer-events: none;
+}
+.action-btn.unlocked {
+    opacity: 1;
+    pointer-events: auto;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+}
+.action-btn.unlocked:hover { transform: scale(1.05); }
+
+/* AD ZONES */
+.ad-zone {
+    width: 100%;
+    min-height: 90px;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--border);
+    margin: 1.5rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+</style>
+
+<!-- Adsterra Banners Inline -->
+<script>
+    atOptions = { 'key':'bfb9ddbec7e3e5681a5312f48a68bb2e','format':'iframe','height':90,'width':728,'params':{} };
+</script>
+<script src="https://www.highperformanceformat.com/bfb9ddbec7e3e5681a5312f48a68bb2e/invoke.js"></script>
+
+</head>
+<body>
+
+    <div class="ad-zone" id="ad-top"></div>
+
+    <div class="glass-panel">
+        <div class="spinner"></div>
+        <h1>Verifying Your Click</h1>
+        <p>Please wait while we secure your connection and prepare your reward page. Clicking ads supports us!</p>
+        
+        <div class="countdown-box" id="timer">10</div>
+        
+        <button class="action-btn" id="continue-btn" onclick="proceed()">Wait...</button>
+    </div>
+
+    <!-- Adsterra Banners Inline -->
+    <script>
+        atOptions = { 'key':'4c130fd19d0381c4f42d8cdf70579cad','format':'iframe','height':250,'width':300,'params':{} };
+    </script>
+    <script src="https://www.highperformanceformat.com/4c130fd19d0381c4f42d8cdf70579cad/invoke.js"></script>
+    <div class="ad-zone" id="ad-bottom"></div>
+
+    <script src="js/ads-manager.js"></script>
+
+    <script>
+        // Parse URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        // Sometimes shortlinks combine everything into ?dest=watch.html%3Fuid%3D123
+        // So we just grab the full query string past the destination mark if possible, or reconstruct
+        const destParam = urlParams.get('dest') || 'task.html';
+        const uidParam = urlParams.get('uid');
+        
+        let timeLeft = 10;
+        const timerEl = document.getElementById('timer');
+        const btn = document.getElementById('continue-btn');
+
+        const interval = setInterval(() => {
+            timeLeft--;
+            timerEl.textContent = timeLeft;
+            if(timeLeft <= 0) {
+                clearInterval(interval);
+                timerEl.textContent = "0";
+                btn.textContent = "VERIFY & CONTINUE 🚀";
+                btn.classList.add('unlocked');
+                timerEl.style.color = "var(--success)";
+            }
+        }, 1000);
+
+        function proceed() {
+            // Trigger Adsterra popunders by changing location, but first make sure we keep revenue intact
+            let finalDest = destParam;
+            if(!finalDest.includes('uid=') && uidParam) {
+                finalDest += (finalDest.includes('?') ? '&' : '?') + 'uid=' + uidParam;
+            }
+            window.location.href = finalDest;
+        }
+    </script>
+
+</body>
+</html>
