@@ -143,6 +143,31 @@ def get_all_user_ids() -> list[int]:
     return uids
 
 # ════════════════════════════════════════════════════════════════
+#  REFERRAL FUNCTIONS
+# ════════════════════════════════════════════════════════════════
+
+def create_referral_code(user_id: int) -> str:
+    """Generate and store a referral code if user doesn't have one."""
+    user = get_user(user_id)
+    if user and isinstance(user.get("referrals"), dict) and user["referrals"].get("referral_code"):
+        return user["referrals"]["referral_code"]
+        
+    import string
+    import random
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    
+    # Save to user
+    reference(f"users/{user_id}/referrals/referral_code").set(code)
+    
+    # Save to lookup index
+    reference(f"referral_codes/{code}").set(user_id)
+    return code
+
+def get_user_by_referral_code(code: str) -> int | None:
+    """Lookup user ID from a referral code string."""
+    return reference(f"referral_codes/{code}").get()
+
+# ════════════════════════════════════════════════════════════════
 #  DEPOSIT FUNCTIONS
 # ════════════════════════════════════════════════════════════════
 
@@ -156,17 +181,6 @@ def save_deposit(user_id: int, file_id: str):
 
 def get_deposit(user_id: int) -> dict | None:
     return db.reference(f"deposits/{user_id}").get()
-
-def approve_deposit(user_id: int):
-    from config import REWARD_REFERRAL
-    
-    db.reference(f"deposits/{user_id}").update({"status": "approved"})
-    db.reference(f"users/{user_id}").update({"deposit_status": True})
-    
-    # Credit the Referrer if exists
-    user = get_user(user_id)
-    if user and user.get("referred_by"):
-        credit_referral(user["referred_by"], REWARD_REFERRAL)
 
 def reject_deposit(user_id: int):
     db.reference(f"deposits/{user_id}").update({"status": "rejected"})
