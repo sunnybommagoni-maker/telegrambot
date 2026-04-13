@@ -13,9 +13,9 @@ class ModelRotator:
     def __init__(self, token):
         self.client = InferenceClient(token=token)
         self.models = [
-            "mistralai/Mistral-7B-Instruct-v0.2",
-            "google/gemma-1.1-7b-it",
-            "HuggingFaceH4/zephyr-7b-beta"
+            "Qwen/Qwen2.5-72B-Instruct",
+            "mistralai/Mistral-Nemo-Instruct-2407",
+            "microsoft/Phi-3.5-mini-instruct"
         ]
         self.current_index = 0
 
