@@ -3,7 +3,6 @@ import time
 import logging
 import json
 import random
-from duckduckgo_search import DDGS
 from huggingface_hub import InferenceClient
 from services.firebase import add_content
 
@@ -64,21 +63,36 @@ class AIAgent:
 
         logger.info("🌍 AI AGENT: Starting Global News Intelligence Sweep...")
         
-        # 1. Broad Global Search
-        search_queries = [
-            "breaking world news technology today",
-            "top financial market news live",
-            "global entertainment and lifestyle headlines",
-            "latest cryptocurrency and blockchain breakthroughs"
+        import urllib.request
+        import xml.etree.ElementTree as ET
+        
+        rss_feeds = [
+            "http://feeds.bbci.co.uk/news/technology/rss.xml",
+            "http://feeds.bbci.co.uk/news/world/rss.xml",
+            "http://feeds.bbci.co.uk/news/business/rss.xml"
         ]
         
-        query = random.choice(search_queries)
+        feed_url = random.choice(rss_feeds)
         results = []
         try:
-            with DDGS() as ddgs:
-                results = list(ddgs.news(query, max_results=5))
+            req = urllib.request.Request(feed_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                xml_data = response.read()
+                root = ET.fromstring(xml_data)
+                # Find all items and pick the top 5
+                items = root.findall('.//item')[:5]
+                for item in items:
+                    title = item.find('title')
+                    desc = item.find('description')
+                    link = item.find('link')
+                    if title is not None and desc is not None:
+                        results.append({
+                            'title': title.text,
+                            'body': desc.text,
+                            'url': link.text if link is not None else ""
+                        })
         except Exception as e:
-            logger.error(f"Search failed: {e}")
+            logger.error(f"RSS fetch failed: {e}")
             return
 
         if not results:
